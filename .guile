@@ -1,2 +1,6 @@
+;; enable readline
 (use-modules (ice-9 readline))
 (activate-readline)
+
+;; enable value history
+(use-modules (ice-9 history))
