@@ -1,0 +1,12 @@
+(define (my-sqrt y)
+  (define (average x y)
+    (/ (+ x y) 2.000000000))
+  (define (good-enough? y x)
+    (< (abs (- y (* x x))) .0000000001))
+  (define (improve y x)
+    (average x (/ y x)))
+  (define (try y x)
+    (if (good-enough? y x)
+      x
+      (try y (improve y x))))
+  (try y 1))
