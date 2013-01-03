@@ -66,6 +66,12 @@
 ;; (25 50)
 ;; the fifth element means ways of change 0 in all 1 kinds of coins
 ;; (50)
+;;
+;; when we want to change 5 we reduce it to the problem of lookup the (4, 0)
+;; (0, 1) (-5, 2) (-20, 3) (-45, 5) element in the list of lists then sum up
+;; the result from last to first.
+;;
+;; (1 1 0 0 0) -> (2 1 0 0 0)
 
 (use-modules (sicp utils))
 
@@ -74,19 +80,19 @@
     '((0 . 1) (1 . 5) (2 . 10) (3 . 25) (4 . 50)))
   (define no-way
     '(0 0 0 0 0))
-  (define (change-coins amount ways-of-change)
-    (if (zero? amount)
-      no-way
-      (map-in-order
-        (lambda (c)
-          (let ((d (- amount (cdr c))))
-            (cond ((< d 0) 0)
-                  ((= d 0) 1)
-                  (else (list-ref
-                          (list-ref ways-of-change d)
-                          (car c))))))
-        list-of-coins)))
   (define (iter-cc inc amount ways-of-change)
+    (define (cc)
+      (if (zero? inc)
+        no-way
+        (map-in-order
+          (lambda (c)
+            (let ((d (- inc (cdr c))))
+              (cond ((< d 0) 0)
+                    ((= d 0) 1)
+                    (else (list-ref
+                            (list-ref ways-of-change d)
+                            (car c))))))
+          list-of-coins)))
     (if (> inc amount)
       (car (car (reverse ways-of-change)))
       ;;ways-of-change
@@ -95,7 +101,7 @@
         amount
         (append ways-of-change
                 (list
-                  (sum (change-coins inc ways-of-change)))))))
+                  (sum (cc)))))))
   (if (< amount 1)
     no-way
     (iter-cc 0 amount '())))
