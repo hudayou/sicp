@@ -10,8 +10,7 @@
 (define (iter-fexpt b n)
   (define (iter a b n)
     ;; invariant quantity is (* a (expt b n))
-    (if (= n 0)
-      a
-      (cond ((odd? n) (iter (* a b) b (1- n)))
-            ((even? n) (iter a (square b) (/ n 2))))))
+    (cond ((zero? n) a)
+          ((odd? n) (iter (* a b) b (1- n)))
+          ((even? n) (iter a (square b) (/ n 2)))))
   (iter 1 b n))
