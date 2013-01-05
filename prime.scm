@@ -83,18 +83,16 @@
     ;; (=
     ;;   (remainder (* x y) n)
     ;;   (remainder (* (remainder x n) (remainder y n)) n))
-    (define (nontrivial? x)
+    (define (nontrivial x)
       ;; (=
       ;;   (remainder (* x x) n) 1)
-      (cond ((= x 1) #f)
-            ((= x (1- m)) #f)
-            (else (= (remainder (square x) m) 1))))
+      (cond ((= x 1) (remainder (square x) m))
+            ((= x (1- m)) (remainder (square x) m))
+            ((= (remainder (square x) m) 1) 0)
+            (else (remainder (square x) m))))
     (cond ((= exp 0) 1)
           ((even? exp)
-           (if (nontrivial? (expmod base (/ exp 2) m))
-             0
-             (remainder (square (expmod base (/ exp 2) m))
-                        m)))
+           (nontrivial (expmod base (/ exp 2) m)))
           (else
             (remainder (* base (expmod base (- exp 1) m))
                        m))))
