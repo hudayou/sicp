@@ -3,7 +3,7 @@
 ;; recursive process
 (define (fast-expt b n)
   (cond ((= n 0) 1)
-        ((even? n) (square (fast-expt b(/ n 2))))
+        ((even? n) (square (fast-expt b (/ n 2))))
         ((odd? n) (* b (fast-expt b (- n 1))))))
 
 ;; iterative process
