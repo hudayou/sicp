@@ -96,7 +96,7 @@
           (else
             (remainder (* base (expmod base (- exp 1) m))
                        m))))
-  ;;(define (iter)
+  ;; TODO: iterize expmod??
   (define (try-it a)
     (= (expmod a (1- n) n) 1))
   (cond ((< n 2) #f)
