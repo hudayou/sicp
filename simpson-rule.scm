@@ -30,6 +30,7 @@
 
 (define (cube x) (* x x x))
 
+;; result is (* (/ 1 4.0) (expt x 4))
 (simpson-rule cube 0 1 100)
 
 (simpson-rule cube 0 1 1000)
