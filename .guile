@@ -7,3 +7,8 @@
 
 ;; enable srfi list
 ;; (use-modules (srfi srfi-1))
+
+;; (use-modules (ice-9 slib))
+;; (require 'primes)
+;; (prime? 13)
+
