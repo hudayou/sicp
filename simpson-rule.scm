@@ -18,9 +18,10 @@
   (define h (/ (- b a) n))
   (define (iter i r)
     (define next
-      (cond ((= i 0) (f a))
+      ;; n and 0 are even
+      (cond ((odd? i) (* 4 (f (+ a (* h i)))))
+            ((= i 0) (f a))
             ((= i n) (f (+ a (* h i))))
-            ((odd? i) (* 4 (f (+ a (* h i)))))
             ((even? i) (* 2 (f (+ a (* h i)))))))
     (cond ((> i n) r)
           (else (iter (+ i 1) (+ r next)))))
