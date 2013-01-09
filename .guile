@@ -3,7 +3,7 @@
 (activate-readline)
 
 ;; enable value history
-(use-modules (ice-9 history))
+;; (use-modules (ice-9 history))
 
 ;; enable srfi list
 ;; (use-modules (srfi srfi-1))
