@@ -1,3 +1,4 @@
+;; interval represents resistor
 (define (make-interval a b) (cons a b))
 
 (define (upper-bound x) (cdr x))
@@ -13,13 +14,23 @@
                    (max p1 p2 p3 p4))))
 
 (define (div-interval x y)
-  (mul-interval x
-                (make-interval (/ 1.0 (upper-bound y))
-                               (/ 1.0 (lower-bound y)))))
+  (let ((ly (lower-bound y))
+        (uy (upper-bound y)))
+    (cond ((or (= ly 0) (= uy 0))
+           (error "divident spans zero " y))
+          ((eq? (> ly 0) (> uy 0))
+           (mul-interval x
+                         (make-interval (/ 1.0 uy)
+                                        (/ 1.0 ly))))
+          (else
+            (error "divident spans zero " y)))))
 
 (define (add-interval x y)
   (make-interval (+ (lower-bound x) (lower-bound y))
                  (+ (upper-bound x) (upper-bound y))))
+
+(define (minus-interval x)
+  (make-interval (- (upper-bound x)) (- (lower-bound x))))
 
 (define (sub-interval x y)
   (make-interval (- (lower-bound x) (upper-bound y))
