@@ -53,11 +53,27 @@
         (else
          (append (fringe (car lst)) (fringe (cdr lst))))))
 
+;; ((2 ((4 9) (3 12))) (6 7))
 (define (make-mobile left right)
   (list left right))
 
 (define (make-branch length structure)
   (list length structure))
+
+(define mobile
+  (make-mobile
+    (make-branch
+      2
+      (make-mobile
+        (make-branch
+          4
+          9)
+        (make-branch
+          3
+          12)))
+    (make-branch
+      6
+      7)))
 
 (define (left-branch mobile)
   (car mobile))
@@ -77,7 +93,6 @@
       structure
       (+ (total-weight structure)))))
 
-;; ((2 ((4 9) (3 12))) (6 7))
 (define (total-weight mobile)
   (+ (branch-weight (left-branch mobile))
      (branch-weight (right-branch mobile))))
@@ -99,3 +114,16 @@
          (balanced-branch? right)
          (= (branch-torque left)
             (branch-torque right)))))
+
+;;((2 (4 9) 3 12) 6 7)
+(define (make-mobile left right)
+  (cons left right))
+(define (make-branch length structure)
+  (cons length structure))
+
+(display mobile)
+(newline)
+(display (balanced-mobile? mobile))
+(newline)
+(display (total-weight mobile))
+(newline)
