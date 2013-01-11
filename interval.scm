@@ -5,6 +5,8 @@
 
 (define (lower-bound x) (car x))
 
+;; http://en.wikipedia.org/wiki/Field_%28mathematics%29?{{{qs}}}
+;; Field operation is not full filled for interval arithmetic
 ;; give 0 + sign
 (define (mul-interval x y)
   (let ((lx (lower-bound x))
