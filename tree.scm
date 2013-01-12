@@ -87,9 +87,12 @@
 (define (branch-structure branch)
   (car (cdr branch)))
 
+(define (leaf-branch? branch)
+  (number? (branch-structure branch)))
+
 (define (branch-weight branch)
   (let ((structure (branch-structure branch)))
-    (if (number? structure)
+    (if (leaf-branch? branch)
       structure
       (+ (total-weight structure)))))
 
@@ -99,7 +102,7 @@
 
 (define (balanced-branch? branch)
   (let ((structure (branch-structure branch)))
-    (if (number? structure)
+    (if (leaf-branch? branch)
       #t
       (balanced-mobile? structure))))
 
