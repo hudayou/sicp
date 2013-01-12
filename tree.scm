@@ -115,11 +115,32 @@
          (= (branch-torque left)
             (branch-torque right)))))
 
-;;((2 (4 9) 3 12) 6 7)
+;;((2 (4 . 9) 3 . 12) 6 . 7)
 (define (make-mobile left right)
   (cons left right))
 (define (make-branch length structure)
   (cons length structure))
+
+(define (branch-structure branch)
+    (cdr branch))
+
+(define (right-branch mobile)
+  (cdr mobile))
+
+(define mobile
+  (make-mobile
+    (make-branch
+      2
+      (make-mobile
+        (make-branch
+          4
+          9)
+        (make-branch
+          3
+          12)))
+    (make-branch
+      6
+      7)))
 
 (display mobile)
 (newline)
