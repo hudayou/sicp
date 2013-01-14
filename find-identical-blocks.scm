@@ -128,10 +128,12 @@
   (read-delimited "" port))
 
 (define (accumulate op initial sequence)
-  (if (null? sequence)
-    initial
-    (op (car sequence)
-        (accumulate op initial (cdr sequence)))))
+  (define (iter res sequence)
+    (if (null? sequence)
+      res
+      (iter (op (car sequence) res)
+            (cdr sequence))))
+    (iter nil sequence))
 
 (define (flatmap proc seq)
   (accumulate append nil (map proc seq)))
