@@ -58,9 +58,9 @@
 ;; keep the lists whose number of elements should be at least
 ;; min-repeate-factor. 
 ;; Filter the list of lists,
-;; eliminate list of blocks belong to other list of blocks.
+;; eliminate list of blocks overlaps other list of blocks.
 ;; That is the two list of block have the same length and
-;; each block of the first list belongs to the second list.
+;; each block of the first list overlaps the second list.
 ;; The list of blocks must be sorted by start-line.
 
 (define (group proc sequence)
