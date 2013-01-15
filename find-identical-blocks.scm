@@ -52,6 +52,13 @@
   (= (block-hash block1)
      (block-hash block2)))
 
+(define (block-list-overlaps? lst1 lst2)
+  (if (and (null? lst1) (null? lst2))
+    #t
+    (and (= (length lst1) (length lst2))
+         (block-overlaps? (car lst1) (car lst2))
+         (block-list-overlaps? (cdr lst1) (cdr lst2)))))
+
 ;; The algorithm:
 ;; Scan the file, get a list of code blocks.
 ;; Find blocks which have the same hash and group them into
@@ -65,110 +72,15 @@
 ;; each block of the first list overlaps the second list.
 ;; The list of blocks must be sorted by start-line.
 
-(define (group proc sequence)
-  (define (any res carl block)
-    (if (null? carl)
-      res
-      (any (or res (proc (car carl) block))
-           (cdr carl)
-           block)))
-  (define (insert block lst1 lst2 attach)
-    (if (null? lst1)
-      (if attach
-        (append lst2 (list (list block)))
-        lst2)
-      (let ((carl (car lst1)))
-        (cond ((any #f carl block)
-               (insert block (cdr lst1)
-                       (append lst2 (list (append carl (list block))))
-                       #f))
-              (else
-                (insert block (cdr lst1) (append lst2 (list carl)) attach))))))
-  (define (iter block-list list-of-block-list)
-    (if (null? block-list)
-      list-of-block-list
-      (iter (cdr block-list)
-            (insert (car block-list)
-                    list-of-block-list
-                    nil
-                    #t))))
-  (iter sequence nil))
-
-(define (group-block list-of-block)
-  (group block-hash=? list-of-block))
-
-(define (filter-block list-of-block)
-  (>= (length list-of-block) min-repeat-factor))
-
-(define (block-list-overlaps? block-list1 block-list2)
-  (define (less lst1 lst2)
-    (<= (block-start lst1) (block-start lst2)))
-  (define (iter lst1 lst2 res)
-    (if (null? lst1)
-      res
-      (if (block-overlaps? (car lst1) (car lst2))
-        (iter (cdr lst1) (cdr lst2) (and res #t))
-        (iter (cdr lst1) (cdr lst2) (and res #f)))))
-  (if (not (= (length block-list1)
-              (length block-list2)))
-    #f
-    (if (< (block-size (car block-list1)) (block-size (car block-list2)))
-      (iter (sort block-list1 less) (sort block-list2 less) #t)
-      (iter (sort block-list2 less) (sort block-list1 less) #t))))
-
 (define (enumerate-interval low high)
   (if (> low high)
     nil
     (cons low (enumerate-interval (+ low 1) high))))
 
-(define (group-block-list list-of-block-list)
-  (group block-list-overlaps? list-of-block-list))
-
 (use-modules (ice-9 rdelim))
 
 (define (read-file port)
   (read-delimited "" port))
-
-(define (accumulate op initial sequence)
-  (define (iter res sequence)
-    (if (null? sequence)
-      res
-      (iter (op (car sequence) res)
-            (cdr sequence))))
-    (iter nil sequence))
-
-(define (flatmap proc seq)
-  (accumulate append nil (map proc seq)))
-
-(define (build-block-list file)
-  (define (sublist start result size list-of-lines)
-    (if (= start size)
-      result
-      (sublist (+ start 1)
-               (append result (list (car list-of-lines)))
-               size
-               (cdr list-of-lines))))
-  (define (build-block-with-size lineno size list-of-lines)
-    (if (> size (length list-of-lines))
-      nil
-      (make-block lineno
-                  (+ lineno size -1)
-                  file
-                  (string-join
-                    (sublist 0 nil size list-of-lines)))))
-  (define (build-block lineno list-of-lines)
-    (flatmap (lambda (size)
-               (list (build-block-with-size lineno size list-of-lines)))
-             (enumerate-interval min-block-size max-block-size)))
-  (define (iter lineno list-of-lines list-of-block)
-    (if (null? list-of-lines)
-      list-of-block
-      (iter (+ lineno 1)
-            (cdr list-of-lines)
-            (append list-of-block
-                    (build-block lineno list-of-lines)))))
-  (let ((file-content (call-with-input-file file read-file)))
-    (iter 1 (string-split file-content #\newline) nil)))
 
 (define delimiter #\newline)
 (define delimiter-string "\n")
@@ -184,15 +96,15 @@
   (define block-hash-table (make-hash-table))
   (define list-of-lines (read-lines file))
   (define (remove-single-blocks)
-    (hash-for-each
-      (lambda (k v)
-        (if (< (length v) min-repeat-factor)
-          (hash-remove! block-hash-table k))) block-hash-table))
+    (for-each
+      (lambda (x)
+        (if (< (length (cdr x)) min-repeat-factor)
+          (hash-remove! block-hash-table (car x))))
+      (hash-map->list cons block-hash-table))
+    block-hash-table)
   (define (build-hash-table line-list start-line)
     (if (< (length line-list) min-block-size)
-      (begin
-        (remove-single-blocks)
-        block-hash-table)
+      (remove-single-blocks)
       (begin
         (update-hash-table line-list start-line)
         (build-hash-table (cdr line-list) (+ start-line 1)))))
@@ -225,18 +137,16 @@
 
 (define (remove-duplicate-entries hash-table)
   (define (remove-overlaps k1 v1)
-    (let ((s1 (block-size v1)))
-      (hash-for-each
-        (lambda (k2 v2)
-          (let ((s2 (block-size v2)))
+    (for-each
+      (lambda (x)
+        (let ((k2 (car x))
+              (v2 (cdr x)))
+          (let ((s2 (block-size v2))
+                (s1 (block-size v1)))
             (if (block-list-overlaps? v1 v2)
               (if (< s2 s1)
-                (hash-remove! hash-table k2)))))
-        hash-table)))
-  (for-each
-    (lambda (x)
-      (remove-overlaps (car x) (cdr x)))
-    (hash-map->list cons hash-table))
+                (hash-remove! hash-table k2))))))
+      (hash-map->list cons hash-table)))
   (for-each
     (lambda (x)
       (remove-overlaps (car x) (cdr x)))
@@ -254,22 +164,7 @@
           (newline))))
     hash-table))
 
-(define (block-list-overlaps? lst1 lst2)
-  (if (and (null? lst1) (null? lst2))
-    #t
-    (and (= (length lst1) (length lst2))
-         (block-overlaps? (car lst1) (car lst2))
-         (block-list-overlaps? (cdr lst1) (cdr lst2)))))
-
 (define (find-identical-blocks file)
-  (define (less lst1 lst2)
-    (and (<= (block-start (car lst1)) (block-start (car lst2)))
-         (>= (block-end (car lst1)) (block-end (car lst2)))))
-  (map (lambda (list-of-block-list)
-         (car (sort list-of-block-list less)))
-       (group-block-list
-         (filter filter-block
-                 (group-block
-                   (filter (lambda (x)
-                             (not (equal? x nil)))
-                           (build-block-list file)))))))
+  (hash-show
+    (remove-duplicate-entries
+      (build-block-hash-table file))))
