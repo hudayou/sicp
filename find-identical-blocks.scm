@@ -120,9 +120,26 @@
       delimiter)
     delimiter))
 
+;; A fold operation, use fold instead?
+(define (and-predicates predicates param)
+  (if (null? predicates)
+    #t
+    (and ((car predicates) param)
+         (and-predicates (cdr predicates) param))))
+
+(define start-line-regexp "^\\s+[-a-z]+:\\s*[|>]*\\s*$")
+(define end-line-regexp "^\\s+[.a-z].*$")
+
 (define (build-block-hash-table file)
   (define block-hash-table (make-hash-table))
   (define list-of-lines (read-lines file))
+  (define (regexp-filter list-of-lines)
+    (let ((start-line (list-ref list-of-lines 0))
+          (end-line (list-ref list-of-lines (- (length list-of-lines) 1))))
+      (if (and (string-match start-line-regexp start-line)
+               (string-match end-line-regexp end-line))
+        #t
+        #f)))
   (define (remove-single-blocks)
     (for-each
       (lambda (x)
@@ -146,19 +163,25 @@
                 (hash-set! block-hash-table b-key (cons b b-value))
                 (hash-set! block-hash-table b-key (list b)))))))
       (build-blocks line-list start-line)))
+  (define (filter-block-content list-of-lines)
+    ;;#t)
+    (and-predicates (list regexp-filter) list-of-lines))
   (define (build-blocks line-list start-line)
-    (map
-      (lambda (bsize)
-        (make-block
-          start-line
-          (+ start-line bsize -1)
-          file
-          (list-head line-list bsize)))
-      (enumerate-interval min-block-size
-                          (let ((no-of-lines (length line-list)))
-                            (if (< no-of-lines max-block-size)
-                              no-of-lines
-                              max-block-size)))))
+    (filter vector?
+            (map
+              (lambda (bsize)
+                (let ((list-of-lines (list-head line-list bsize)))
+                  (if (filter-block-content list-of-lines)
+                    (make-block
+                      start-line
+                      (+ start-line bsize -1)
+                      file
+                      list-of-lines))))
+              (enumerate-interval min-block-size
+                                  (let ((no-of-lines (length line-list)))
+                                    (if (< no-of-lines max-block-size)
+                                      no-of-lines
+                                      max-block-size))))))
   (build-hash-table list-of-lines 1)
   (remove-single-blocks))
 
