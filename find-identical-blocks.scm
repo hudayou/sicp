@@ -251,12 +251,13 @@
     str))
 
 (define (wrapper-of-fib file stat flag)
+  (define is-text-file (string-append "file -bi " file))
   (if (and (eq? flag `regular)
            ;; skip hidden files
            (not (string-contains file "/."))
            (string-prefix?
-              "text/"
-              (command-output (string-append "file -bi " file))))
+             "text/"
+             (command-output is-text-file)))
     (find-identical-blocks file))
   #t)
 
