@@ -6,6 +6,8 @@
 
 (define nil '())
 
+(define find-in-this-file ".")
+
 ;; block-size-range is a range specify the size of the code block:
 ;; (min-block-size max-block-size)
 ;; A file with n lines have
@@ -241,7 +243,9 @@
       (build-block-hash-table file))))
 
 (define (wrapper-of-fib file stat flag)
-  (if (eq? flag `regular)
+  (if (and (eq? flag `regular)
+           ;; skip hidden files
+           (not (string-contains file "/.")))
     (find-identical-blocks file))
   #t)
 
@@ -252,5 +256,56 @@
 
 (use-modules (ice-9 regex))
 
+(use-modules (ice-9 getopt-long))
+
 (define (main args)
-  (fib (cadr args)))
+  (let* ((option-spec '((help (single-char #\h) (value #f))
+                        (file (single-char #\f) (value #t))
+                        (min-size (value #t))
+                        (max-size (value #t))
+                        (min-factor (value #t))
+                        (start-line-regexp (single-char #\s) (value #t))
+                        (end-line-regexp (single-char #\e) (value #t))))
+         (options (getopt-long args option-spec))
+         (help-wanted
+           (option-ref options 'help #f))
+         (file
+           (option-ref options 'file find-in-this-file))
+         (min-size
+           (option-ref options 'min-size min-block-size))
+         (max-size
+           (option-ref options 'max-size max-block-size))
+         (min-factor
+           (option-ref options 'min-factor min-repeat-factor))
+         (srex
+           (option-ref options 'start-line-regexp start-line-regexp))
+         (erex
+           (option-ref options 'end-line-regexp end-line-regexp)))
+    (if help-wanted
+      (display "\
+fib [options]
+-h, --help               Display this help
+-f, --file               Find identical blocks in this file
+--min-size               Minimal size of the block
+--max-size               Maximal size of the block
+--min-factor             Maximal size of the block
+-s, --start-line-regexp  Regular expression for the first line of the block
+-e, --end-line-regexp    Regular expression for the last line of the block
+")
+      (begin
+        (if (not (equal? file find-in-this-file))
+          (set! find-in-this-file file))
+        (if (and (not (equal? min-size min-block-size))
+                 (integer? (string->number min-size)))
+          (set! min-block-size (string->number min-size)))
+        (if (and (not (equal? max-size max-block-size))
+                 (integer? (string->number max-size)))
+          (set! max-block-size (string->number max-size)))
+        (if (and (not (equal? min-factor min-repeat-factor))
+                 (integer? (string->number min-factor)))
+          (set! min-repeat-factor (string->number min-factor)))
+        (if (not (equal? srex start-line-regexp))
+          (set! start-line-regexp srex))
+        (if (not (equal? erex end-line-regexp))
+          (set! end-line-regexp erex))
+        (fib find-in-this-file)))))
