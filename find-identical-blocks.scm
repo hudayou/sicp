@@ -9,9 +9,16 @@
 ;; (map + (enumerate min-block-size - 1 max-block-size - 1))
 ;; blocks.
 ;; (define block-size-range (list 4 12))
-(define min-block-size 4)
-(define max-block-size 18)
-
+(define min-block-size 5)
+(define max-block-size 67)
+;;(define min-block-size 3)
+;;(define max-block-size 43)
+;;(define min-block-size 7)
+;;(define max-block-size 47)
+;;(define min-block-size 5)
+;;(define max-block-size 47)
+;;(define min-block-size 7)
+;;(define max-block-size 67)
 ;; The minimum times of a block is repated in the file.
 (define min-repeat-factor 2)
 
