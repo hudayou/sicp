@@ -236,3 +236,13 @@
   (hash-show
     (remove-duplicate-entries
       (build-block-hash-table file))))
+
+(define (wrapper-of-fib file stat flag)
+  (if (eq? flag `regular)
+    (find-identical-blocks file))
+  #t)
+
+(use-modules (ice-9 ftw))
+
+(define (fib file)
+  (ftw file wrapper-of-fib))
