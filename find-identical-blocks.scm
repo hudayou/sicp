@@ -15,24 +15,16 @@
 ;; (define block-size-range (list 4 12))
 (define min-block-size 5)
 (define max-block-size 67)
-;;(define min-block-size 3)
-;;(define max-block-size 43)
-;;(define min-block-size 7)
-;;(define max-block-size 47)
-;;(define min-block-size 5)
-;;(define max-block-size 47)
-;;(define min-block-size 7)
-;;(define max-block-size 67)
 
 ;; The minimum times of a block is repated in the file.
 (define min-repeat-factor 2)
 
 ;; The maximum times of a block is repated in the file.
-(define max-repeat-factor 6)
+;; (define max-repeat-factor 6)
 
 ;; How a code block record looks like?
 ;; A vector looks like below:
-;; #(hash-of-block path-to-file start-line end-line continous-flag)
+;; #(hash-of-block path-to-file start-line end-line)
 
 (define (make-block start-line end-line path-to-file list-of-lines)
   (vector
