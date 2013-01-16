@@ -130,10 +130,13 @@
     (and ((car filters) param)
          (and-filters (cdr filters) param))))
 
+;; start-line may start with '-
 (define start-line-regexp "^\\s+[-a-z]+:\\s*[|>]*\\s*$")
+;; end-line may not start with '-
 (define end-line-regexp "^\\s+[.a-z].*$")
 
-(define (regexp-filter list-of-lines)
+;; filter start-line and end-line by regular expression
+(define (se-filter list-of-lines)
   (let ((start-line (list-ref list-of-lines 0))
         (end-line (list-ref list-of-lines (- (length list-of-lines) 1))))
     (if (and (string-match start-line-regexp start-line)
@@ -141,7 +144,7 @@
       #t
       #f)))
 
-(define block-filters (list regexp-filter))
+(define block-filters (list se-filter))
 
 (define (build-block-hash-table file)
   (define block-hash-table (make-hash-table))
