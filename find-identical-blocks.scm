@@ -242,10 +242,21 @@
     (remove-duplicate-entries
       (build-block-hash-table file))))
 
+(use-modules (ice-9 popen))
+
+(define (command-output command)
+  (let* ((port (open-input-pipe command))
+         (str (read-line port)))
+    (close-pipe port)
+    str))
+
 (define (wrapper-of-fib file stat flag)
   (if (and (eq? flag `regular)
            ;; skip hidden files
-           (not (string-contains file "/.")))
+           (not (string-contains file "/."))
+           (string-prefix?
+              "text/"
+              (command-output (string-append "file -bi " file))))
     (find-identical-blocks file))
   #t)
 
