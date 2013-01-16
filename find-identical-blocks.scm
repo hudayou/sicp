@@ -19,6 +19,7 @@
 ;;(define max-block-size 47)
 ;;(define min-block-size 7)
 ;;(define max-block-size 67)
+
 ;; The minimum times of a block is repated in the file.
 (define min-repeat-factor 2)
 
@@ -26,8 +27,13 @@
 ;; A list looks like below:
 ;; (hash-of-block path-to-file start-line end-line)
 
-(define (make-block start-line end-line path-to-file content-of-block)
-  (vector (string-hash content-of-block) path-to-file start-line end-line))
+(define (make-block start-line end-line path-to-file list-of-lines)
+  (vector
+    (string-hash (string-join list-of-lines delimiter-string))
+    path-to-file
+    start-line
+    end-line
+    (if (member "" list-of-lines) #f #t)))
 
 (define (block-hash block)
   (vector-ref block 0))
@@ -45,6 +51,19 @@
   (if (pair? block)
     (block-size (car block))
     (+ 1 (- (block-end block) (block-start block)))))
+
+(define (block-content block)
+  (let ((bsize (block-size block))
+        (bpath (block-path block))
+        (bstart (block-start block)))
+    (string-join
+      (list-head
+        (list-tail (read-lines bpath) (- bstart 1))
+        bsize)
+      delimiter-string)))
+
+(define (block-continous? block)
+  (vector-ref block 4))
 
 (define (block-overlaps? block1 block2)
   (or
@@ -111,7 +130,7 @@
     block-hash-table)
   (define (build-hash-table line-list start-line)
     (if (< (length line-list) min-block-size)
-      (remove-single-blocks)
+      block-hash-table
       (begin
         (update-hash-table line-list start-line)
         (build-hash-table (cdr line-list) (+ start-line 1)))))
@@ -120,9 +139,10 @@
       (lambda (b)
         (let ((b-key (block-hash b)))
           (let ((b-value (hash-ref block-hash-table b-key)))
-            (if b-value
-              (hash-set! block-hash-table b-key (cons b b-value))
-              (hash-set! block-hash-table b-key (list b))))))
+            (if (block-continous? b)
+              (if b-value
+                (hash-set! block-hash-table b-key (cons b b-value))
+                (hash-set! block-hash-table b-key (list b)))))))
       (build-blocks line-list start-line)))
   (define (build-blocks line-list start-line)
     (map
@@ -131,13 +151,14 @@
           start-line
           (+ start-line bsize -1)
           file
-          (string-join (list-head line-list bsize) delimiter-string)))
+          (list-head line-list bsize)))
       (enumerate-interval min-block-size
                           (let ((no-of-lines (length line-list)))
                             (if (< no-of-lines max-block-size)
                               no-of-lines
                               max-block-size)))))
-  (build-hash-table list-of-lines 1))
+  (build-hash-table list-of-lines 1)
+  (remove-single-blocks))
 
 (define (hash-empty? hash-table)
   (eq? (hash-map->list cons hash) nil))
@@ -168,6 +189,8 @@
           (display k)
           (display "\t***\t")
           (display v)
+          (newline)
+          (display (block-content (car v)))
           (newline))))
     hash-table))
 
