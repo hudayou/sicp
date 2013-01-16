@@ -1,3 +1,7 @@
+#!/usr/bin/guile \
+-e main -s
+!#
+
 ;; Find identical code blocks in a file(directory).
 
 (define nil '())
@@ -255,3 +259,8 @@
 
 (define (fib file)
   (ftw file wrapper-of-fib))
+
+(use-modules (ice-9 regex))
+
+(define (main args)
+  (fib (cadr args)))
