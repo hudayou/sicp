@@ -6,7 +6,7 @@
 ;; (min-block-size max-block-size)
 ;; A file with n lines have
 ;; (max-block-size - min-block-size + 1) * n -
-;; (map + (enumerate min-block-size - 1 max-block-size - 1))
+;; (fold + 0 (enumerate min-block-size - 1 max-block-size - 1))
 ;; blocks.
 ;; (define block-size-range (list 4 12))
 (define min-block-size 5)
@@ -23,9 +23,12 @@
 ;; The minimum times of a block is repated in the file.
 (define min-repeat-factor 2)
 
+;; The maximum times of a block is repated in the file.
+(define max-repeat-factor 6)
+
 ;; How a code block record looks like?
-;; A list looks like below:
-;; (hash-of-block path-to-file start-line end-line)
+;; A vector looks like below:
+;; #(hash-of-block path-to-file start-line end-line continous-flag)
 
 (define (make-block start-line end-line path-to-file list-of-lines)
   (vector
@@ -78,6 +81,8 @@
   (= (block-hash block1)
      (block-hash block2)))
 
+;; A block list is a list of blocks with same content
+
 (define (block-list-overlaps? lst1 lst2)
   (if (and (null? lst1) (null? lst2))
     #t
@@ -86,17 +91,14 @@
          (block-list-overlaps? (cdr lst1) (cdr lst2)))))
 
 ;; The algorithm:
-;; Scan the file, get a list of code blocks.
-;; Find blocks which have the same hash and group them into
-;; a list(greedy algorithm can be used here).
-;; Filter the list of lists,
-;; keep the lists whose number of elements should be at least
-;; min-repeate-factor. 
-;; Filter the list of lists,
-;; eliminate list of blocks overlaps other list of blocks.
-;; That is the two list of block have the same length and
-;; each block of the first list overlaps the second list.
-;; The list of blocks must be sorted by start-line.
+;; Build blocks from the file, insert list of identical blocks
+;; in a hash table keyed by the string hash of the content of the block.
+;; (Note blocks which contains blank lines are not inserted.)
+;;
+;; Remove single blocks, which means they have no companies in the file.
+;;
+;; Remove list of blocks which overlaps with other list of blocks and
+;; have a smaller block size.
 
 (define (enumerate-interval low high)
   (if (> low high)
@@ -188,7 +190,12 @@
         (begin
           (display k)
           (display "\t***\t")
-          (display v)
+          (if (> (length v) 2)
+            (display (append
+                       (list-head v 2)
+                       (list (- (length v) 2))
+                       'more))
+            (display v))
           (newline)
           (display (block-content (car v)))
           (newline))))
