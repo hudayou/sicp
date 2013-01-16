@@ -124,11 +124,11 @@
     delimiter))
 
 ;; A fold operation, use fold instead?
-(define (and-predicates predicates param)
-  (if (null? predicates)
+(define (and-filters filters param)
+  (if (null? filters)
     #t
-    (and ((car predicates) param)
-         (and-predicates (cdr predicates) param))))
+    (and ((car filters) param)
+         (and-filters (cdr filters) param))))
 
 (define start-line-regexp "^\\s+[-a-z]+:\\s*[|>]*\\s*$")
 (define end-line-regexp "^\\s+[.a-z].*$")
@@ -170,7 +170,7 @@
                 (hash-set! block-hash-table b-key (list b)))))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
-    (and-predicates block-filters list-of-lines))
+    (and-filters block-filters list-of-lines))
   (define (build-blocks line-list start-line)
     (filter block?
             (map
