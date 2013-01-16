@@ -147,7 +147,7 @@
 (define (continous-filter list-of-lines)
   (if (member "" list-of-lines) #f #t))
 
-(define block-filters (list se-filter continous-filter))
+(define block-filters (list continous-filter se-filter))
 
 (define (build-block-hash-table file)
   (define block-hash-table (make-hash-table))
