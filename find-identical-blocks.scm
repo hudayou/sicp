@@ -237,8 +237,33 @@
           (newline))))
     hash-table))
 
+(define (pretty-show hash-table)
+  (define (transform x)
+    (vector
+      (block-path x)
+      (block-start x)
+      (block-end x)))
+  (hash-for-each
+    (lambda (k v)
+      (display "Block footprint:")
+      (display " ")
+      (if (> (length v) 2)
+        (begin
+          (display
+            (map transform (list-head v 2)))
+          (display " ")
+          (display (- (length v) 2))
+          (display " more .."))
+        (display (map transform v)))
+      (newline)
+      (display "Block content:")
+      (newline)
+      (display (block-content (car v)))
+      (newline))
+    hash-table))
+
 (define (find-identical-blocks file)
-  (hash-show
+  (pretty-show
     (remove-duplicate-entries
       (build-block-hash-table file))))
 
