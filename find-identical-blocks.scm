@@ -65,6 +65,9 @@
         bsize)
       delimiter-string)))
 
+(define (block? block)
+  (vector? block))
+
 (define (block-continous? block)
   (vector-ref block 4))
 
@@ -130,16 +133,19 @@
 (define start-line-regexp "^\\s+[-a-z]+:\\s*[|>]*\\s*$")
 (define end-line-regexp "^\\s+[.a-z].*$")
 
+(define (regexp-filter list-of-lines)
+  (let ((start-line (list-ref list-of-lines 0))
+        (end-line (list-ref list-of-lines (- (length list-of-lines) 1))))
+    (if (and (string-match start-line-regexp start-line)
+             (string-match end-line-regexp end-line))
+      #t
+      #f)))
+
+(define block-filters (list regexp-filter))
+
 (define (build-block-hash-table file)
   (define block-hash-table (make-hash-table))
   (define list-of-lines (read-lines file))
-  (define (regexp-filter list-of-lines)
-    (let ((start-line (list-ref list-of-lines 0))
-          (end-line (list-ref list-of-lines (- (length list-of-lines) 1))))
-      (if (and (string-match start-line-regexp start-line)
-               (string-match end-line-regexp end-line))
-        #t
-        #f)))
   (define (remove-single-blocks)
     (for-each
       (lambda (x)
@@ -164,10 +170,9 @@
                 (hash-set! block-hash-table b-key (list b)))))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
-    ;;#t)
-    (and-predicates (list regexp-filter) list-of-lines))
+    (and-predicates block-filters list-of-lines))
   (define (build-blocks line-list start-line)
-    (filter vector?
+    (filter block?
             (map
               (lambda (bsize)
                 (let ((list-of-lines (list-head line-list bsize)))
