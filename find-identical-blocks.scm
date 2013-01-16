@@ -39,8 +39,7 @@
     (string-hash (string-join list-of-lines delimiter-string))
     path-to-file
     start-line
-    end-line
-    (if (member "" list-of-lines) #f #t)))
+    end-line))
 
 (define (block-hash block)
   (vector-ref block 0))
@@ -71,9 +70,6 @@
 
 (define (block? block)
   (vector? block))
-
-(define (block-continous? block)
-  (vector-ref block 4))
 
 (define (block-overlaps? block1 block2)
   (or
@@ -148,7 +144,10 @@
       #t
       #f)))
 
-(define block-filters (list se-filter))
+(define (continous-filter list-of-lines)
+  (if (member "" list-of-lines) #f #t))
+
+(define block-filters (list se-filter continous-filter))
 
 (define (build-block-hash-table file)
   (define block-hash-table (make-hash-table))
@@ -171,10 +170,9 @@
       (lambda (b)
         (let ((b-key (block-hash b)))
           (let ((b-value (hash-ref block-hash-table b-key)))
-            (if (block-continous? b)
-              (if b-value
-                (hash-set! block-hash-table b-key (cons b b-value))
-                (hash-set! block-hash-table b-key (list b)))))))
+            (if b-value
+              (hash-set! block-hash-table b-key (cons b b-value))
+              (hash-set! block-hash-table b-key (list b))))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
     (and-filters block-filters list-of-lines))
