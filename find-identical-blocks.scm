@@ -208,6 +208,14 @@
               (if (< s2 s1)
                 (hash-remove! hash-table k2))))))
       (hash-map->list cons hash-table)))
+  ;; prove by contradiction
+  ;; since for each block list, block lists overlaps
+  ;; with it and have a smaller block size is removed.
+  ;;
+  ;; if there is such a block that overlaps with other,
+  ;; two cases:
+  ;; the other block have a smaller size, then it should be removed already.
+  ;; otherwise, the block itself should already be removed.
   (for-each
     (lambda (x)
       (remove-overlaps (car x) (cdr x)))
