@@ -222,10 +222,11 @@
           (display k)
           (display "\t***\t")
           (if (> (length v) 2)
-            (display (append
-                       (list-head v 2)
-                       (list (- (length v) 2))
-                       'more))
+            (begin
+              (display (list-head v 2))
+              (newline)
+              (display (- (length v) 2))
+              (display " more .."))
             (display v))
           (newline)
           (display (block-content (car v)))
