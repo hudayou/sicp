@@ -196,13 +196,13 @@
   (define (remove-overlaps k1 v1)
     (for-each
       (lambda (x)
-        (let ((k2 (car x))
-              (v2 (cdr x)))
-          (let ((s2 (block-size v2))
-                (s1 (block-size v1)))
-            (if (block-list-overlaps? v1 v2)
-              (if (< s2 s1)
-                (hash-remove! hash-table k2))))))
+        (let* ((k2 (car x))
+               (v2 (cdr x))
+               (s2 (block-size v2))
+               (s1 (block-size v1)))
+          (if (block-list-overlaps? v1 v2)
+            (if (< s2 s1)
+              (hash-remove! hash-table k2)))))
       (hash-map->list cons hash-table)))
   ;; prove by contradiction
   ;; since for each block list, block lists overlaps
