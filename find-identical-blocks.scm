@@ -269,11 +269,11 @@
     hash-table))
 
 (define (display-blocks hash-table)
-  (if (not (hash-empty? hash-table))
-    (begin
-      (set! exit-status 1)
-      (pretty-show
-        (eat-blocks hash-table)))))
+  (let ((eated-table (eat-blocks hash-table)))
+    (if (not (hash-empty? eated-table))
+      (begin
+        (set! exit-status 1)
+        (pretty-show eated-table)))))
 
 (define (find-identical-blocks file)
   (build-block-hash-table file block-hash-table)
