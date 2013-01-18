@@ -20,6 +20,8 @@
 
 (define nil '())
 
+(define exit-status 0)
+
 ;; block-size-range is a range specify the size of the code block:
 ;; (min-block-size max-block-size)
 ;; A file with n lines have
@@ -205,7 +207,7 @@
   (remove-single-blocks))
 
 (define (hash-empty? hash-table)
-  (eq? (hash-map->list cons hash) nil))
+  (eq? (hash-map->list cons hash-table) nil))
 
 (define (remove-duplicate-entries hash-table)
   (define (remove-overlaps k1 v1)
@@ -260,9 +262,12 @@
     hash-table))
 
 (define (find-identical-blocks file)
-  (pretty-show
-    (remove-duplicate-entries
-      (build-block-hash-table file))))
+  (let ((hash-table (build-block-hash-table file)))
+    (if (not (hash-empty? hash-table))
+      (begin
+        (set! exit-status 1)
+        (pretty-show
+          (remove-duplicate-entries hash-table))))))
 
 (use-modules (ice-9 popen))
 
@@ -352,4 +357,5 @@
           (set! start-line-regexp srex))
         (if (not (equal? erex end-line-regexp))
           (set! end-line-regexp erex))
-        (fib file)))))
+        (fib file))))
+  (exit exit-status))
