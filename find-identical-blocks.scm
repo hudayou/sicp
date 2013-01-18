@@ -290,7 +290,20 @@
 (use-modules (ice-9 ftw))
 
 (define (fib file)
-  (ftw file wrapper-of-fib))
+  (for-each
+    (lambda (f)
+      (ftw f wrapper-of-fib))
+    (string-split
+      (string-trim-both
+        file
+        (lambda (c)
+          (or (eq? c #\space)
+              (eq? c #\tab)
+              (eq? c #\return)
+              (eq? c #\newline)
+              (eq? c #\vt)
+              (eq? c #\np))))
+      #\space)))
 
 (use-modules (ice-9 regex))
 
