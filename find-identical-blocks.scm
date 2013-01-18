@@ -36,7 +36,7 @@
 (define min-repeat-factor 2)
 
 ;; The maximum times of a block is repated in the file.
-;; (define max-repeat-factor 6)
+(define max-repeat-factor 64)
 
 ;; Find identical blocks in all input files?
 (define cross-find #f)
@@ -160,8 +160,10 @@
 (define (remove-single-blocks hash-table)
   (for-each
     (lambda (x)
-      (if (< (length (cdr x)) min-repeat-factor)
-        (hash-remove! hash-table (car x))))
+      (let ((block-length (length (cdr x))))
+        (if (or (< block-length min-repeat-factor)
+                (> block-length max-repeat-factor))
+          (hash-remove! hash-table (car x)))))
     (hash-map->list cons hash-table))
   hash-table)
 
@@ -187,9 +189,9 @@
         (let* ((b-key (car x))
                (b (cdr x))
                (b-value (hash-ref hash-table b-key)))
-            (if b-value
-              (hash-set! hash-table b-key (cons b b-value))
-              (hash-set! hash-table b-key (list b)))))
+          (if b-value
+            (hash-set! hash-table b-key (cons b b-value))
+            (hash-set! hash-table b-key (list b)))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
     (and-filters block-filters list-of-lines))
@@ -254,7 +256,7 @@
       (newline)
       (if (> (length v) 2)
         (begin
-            (for-each footprint (list-head v 2))
+          (for-each footprint (list-head v 2))
           (display (- (length v) 2))
           (display " more ..")
           (newline))
@@ -331,7 +333,8 @@
                         (cross-find (single-char #\x) (value #f))
                         (min-size (value #t))
                         (max-size (value #t))
-                        (min-factor (value #t))))
+                        (min-factor (value #t))
+                        (max-factor (value #t))))
          (options (getopt-long args option-spec))
          (help-wanted
            (option-ref options 'help #f))
@@ -348,7 +351,9 @@
          (max-size
            (option-ref options 'max-size max-block-size))
          (min-factor
-           (option-ref options 'min-factor min-repeat-factor)))
+           (option-ref options 'min-factor min-repeat-factor))
+         (max-factor
+           (option-ref options 'max-factor max-repeat-factor)))
     (if (or help-wanted (not file))
       (begin
         (display "fib [options] -f file\n")
@@ -359,7 +364,8 @@
         (display "-x, --cross-find         Cross find blocks in all files\n")
         (display "--min-size               Minimal size of the block\n")
         (display "--max-size               Maximal size of the block\n")
-        (display "--min-factor             Minimal times a block is repeated\n"))
+        (display "--min-factor             Minimal times a block is repeated\n")
+        (display "--max-factor             Maximal times a block is repeated\n"))
       (begin
         (if (not (equal? srex start-line-regexp))
           (set! start-line-regexp srex))
@@ -376,5 +382,8 @@
         (if (and (not (equal? min-factor min-repeat-factor))
                  (integer? (string->number min-factor)))
           (set! min-repeat-factor (string->number min-factor)))
+        (if (and (not (equal? max-factor max-repeat-factor))
+                 (integer? (string->number max-factor)))
+          (set! max-repeat-factor (string->number max-factor)))
         (fib file))))
   (exit exit-status))
