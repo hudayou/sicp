@@ -38,6 +38,9 @@
 ;; The maximum times of a block is repated in the file.
 ;; (define max-repeat-factor 6)
 
+;; Find identical blocks in all input files?
+(define cross-find #f)
+
 ;; How a code block record looks like?
 ;; A vector looks like below:
 ;; #(hash-of-block path-to-file start-line end-line)
@@ -165,19 +168,21 @@
 
 (define block-filters (list continous-filter se-filter))
 
-(define (build-block-hash-table file)
-  (define block-hash-table (make-hash-table))
+(define (remove-single-blocks hash-table)
+  (for-each
+    (lambda (x)
+      (if (< (length (cdr x)) min-repeat-factor)
+        (hash-remove! hash-table (car x))))
+    (hash-map->list cons hash-table))
+  hash-table)
+
+(define block-hash-table (make-hash-table))
+
+(define (build-block-hash-table file hash-table)
   (define list-of-lines (read-lines file))
-  (define (remove-single-blocks)
-    (for-each
-      (lambda (x)
-        (if (< (length (cdr x)) min-repeat-factor)
-          (hash-remove! block-hash-table (car x))))
-      (hash-map->list cons block-hash-table))
-    block-hash-table)
   (define (build-hash-table line-list start-line)
     (if (< (length line-list) min-block-size)
-      block-hash-table
+      hash-table
       (begin
         (update-hash-table line-list start-line)
         (build-hash-table (cdr line-list) (+ start-line 1)))))
@@ -185,10 +190,10 @@
     (for-each
       (lambda (b)
         (let ((b-key (block-hash b)))
-          (let ((b-value (hash-ref block-hash-table b-key)))
+          (let ((b-value (hash-ref hash-table b-key)))
             (if b-value
-              (hash-set! block-hash-table b-key (cons b b-value))
-              (hash-set! block-hash-table b-key (list b))))))
+              (hash-set! hash-table b-key (cons b b-value))
+              (hash-set! hash-table b-key (list b))))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
     (and-filters block-filters list-of-lines))
@@ -208,8 +213,7 @@
                                     (if (< no-of-lines max-block-size)
                                       no-of-lines
                                       max-block-size))))))
-  (build-hash-table list-of-lines 1)
-  (remove-single-blocks))
+  (build-hash-table list-of-lines 1))
 
 (define (hash-empty? hash-table)
   (eq? (hash-map->list cons hash-table) nil))
@@ -240,6 +244,10 @@
     (hash-map->list cons hash-table))
   hash-table)
 
+(define (eat-blocks hash-table)
+  (remove-duplicate-entries
+    (remove-single-blocks hash-table)))
+
 (define (pretty-show hash-table)
   (define (footprint x)
     (display
@@ -266,13 +274,19 @@
       (newline))
     hash-table))
 
+(define (display-blocks hash-table)
+  (if (not (hash-empty? hash-table))
+    (begin
+      (set! exit-status 1)
+      (pretty-show
+        (eat-blocks hash-table)))))
+
 (define (find-identical-blocks file)
-  (let ((hash-table (build-block-hash-table file)))
-    (if (not (hash-empty? hash-table))
-      (begin
-        (set! exit-status 1)
-        (pretty-show
-          (remove-duplicate-entries hash-table))))))
+  (build-block-hash-table file block-hash-table)
+  (if (not cross-find)
+    (begin
+      (display-blocks block-hash-table)
+      (hash-clear! block-hash-table))))
 
 (use-modules (ice-9 popen))
 
@@ -309,7 +323,9 @@
               (eq? c #\newline)
               (eq? c #\vt)
               (eq? c #\np))))
-      #\space)))
+      #\space))
+  (if cross-find
+    (display-blocks block-hash-table)))
 
 (use-modules (ice-9 regex))
 
@@ -318,37 +334,47 @@
 (define (main args)
   (let* ((option-spec '((help (single-char #\h) (value #f))
                         (file (single-char #\f) (value #t))
+                        (start-line-regexp (single-char #\s) (value #t))
+                        (end-line-regexp (single-char #\e) (value #t))
+                        (cross-find (single-char #\x) (value #f))
                         (min-size (value #t))
                         (max-size (value #t))
-                        (min-factor (value #t))
-                        (start-line-regexp (single-char #\s) (value #t))
-                        (end-line-regexp (single-char #\e) (value #t))))
+                        (min-factor (value #t))))
          (options (getopt-long args option-spec))
          (help-wanted
            (option-ref options 'help #f))
          (file
            (option-ref options 'file #f))
+         (srex
+           (option-ref options 'start-line-regexp start-line-regexp))
+         (erex
+           (option-ref options 'end-line-regexp end-line-regexp))
+         (xfind
+           (option-ref options 'cross-find #f))
          (min-size
            (option-ref options 'min-size min-block-size))
          (max-size
            (option-ref options 'max-size max-block-size))
          (min-factor
-           (option-ref options 'min-factor min-repeat-factor))
-         (srex
-           (option-ref options 'start-line-regexp start-line-regexp))
-         (erex
-           (option-ref options 'end-line-regexp end-line-regexp)))
+           (option-ref options 'min-factor min-repeat-factor)))
     (if (or help-wanted (not file))
       (begin
         (display "fib [options] -f file\n")
         (display "-h, --help               Display this help\n")
         (display "-f, --file               Find identical blocks in this file\n")
+        (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
+        (display "-e, --end-line-regexp    Regular expression for the last line of the block\n")
+        (display "-x, --cross-find         Cross find blocks in all files\n")
         (display "--min-size               Minimal size of the block\n")
         (display "--max-size               Maximal size of the block\n")
-        (display "--min-factor             Minimal times a block is repeated\n")
-        (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
-        (display "-e, --end-line-regexp    Regular expression for the last line of the block\n"))
+        (display "--min-factor             Minimal times a block is repeated\n"))
       (begin
+        (if (not (equal? srex start-line-regexp))
+          (set! start-line-regexp srex))
+        (if (not (equal? erex end-line-regexp))
+          (set! end-line-regexp erex))
+        (if xfind
+          (set! cross-find #t))
         (if (and (not (equal? min-size min-block-size))
                  (integer? (string->number min-size)))
           (set! min-block-size (string->number min-size)))
@@ -358,9 +384,5 @@
         (if (and (not (equal? min-factor min-repeat-factor))
                  (integer? (string->number min-factor)))
           (set! min-repeat-factor (string->number min-factor)))
-        (if (not (equal? srex start-line-regexp))
-          (set! start-line-regexp srex))
-        (if (not (equal? erex end-line-regexp))
-          (set! end-line-regexp erex))
         (fib file))))
   (exit exit-status))
