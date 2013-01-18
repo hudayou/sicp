@@ -6,8 +6,6 @@
 
 (define nil '())
 
-(define find-in-this-file ".")
-
 ;; block-size-range is a range specify the size of the code block:
 ;; (min-block-size max-block-size)
 ;; A file with n lines have
@@ -321,7 +319,7 @@
          (help-wanted
            (option-ref options 'help #f))
          (file
-           (option-ref options 'file find-in-this-file))
+           (option-ref options 'file #f))
          (min-size
            (option-ref options 'min-size min-block-size))
          (max-size
@@ -332,9 +330,9 @@
            (option-ref options 'start-line-regexp start-line-regexp))
          (erex
            (option-ref options 'end-line-regexp end-line-regexp)))
-    (if help-wanted
+    (if (or help-wanted (not file))
       (begin
-        (display "fib [options]\n")
+        (display "fib [options] -f file\n")
         (display "-h, --help               Display this help\n")
         (display "-f, --file               Find identical blocks in this file\n")
         (display "--min-size               Minimal size of the block\n")
@@ -343,8 +341,6 @@
         (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
         (display "-e, --end-line-regexp    Regular expression for the last line of the block\n"))
       (begin
-        (if (not (equal? file find-in-this-file))
-          (set! find-in-this-file file))
         (if (and (not (equal? min-size min-block-size))
                  (integer? (string->number min-size)))
           (set! min-block-size (string->number min-size)))
@@ -358,4 +354,4 @@
           (set! start-line-regexp srex))
         (if (not (equal? erex end-line-regexp))
           (set! end-line-regexp erex))
-        (fib find-in-this-file)))))
+        (fib file)))))
