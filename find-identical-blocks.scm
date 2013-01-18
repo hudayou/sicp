@@ -38,7 +38,7 @@
 ;; The maximum times of a block is repated in the file.
 (define max-repeat-factor 64)
 
-;; Find identical blocks in all input files?
+;; Cross find identical blocks in all files?
 (define cross-find #f)
 
 ;; How a code block record looks like?
