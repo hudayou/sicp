@@ -320,16 +320,15 @@
          (erex
            (option-ref options 'end-line-regexp end-line-regexp)))
     (if help-wanted
-      (display "\
-fib [options]
--h, --help               Display this help
--f, --file               Find identical blocks in this file
---min-size               Minimal size of the block
---max-size               Maximal size of the block
---min-factor             Maximal size of the block
--s, --start-line-regexp  Regular expression for the first line of the block
--e, --end-line-regexp    Regular expression for the last line of the block
-")
+      (begin
+        (display "fib [options]\n")
+        (display "-h, --help               Display this help\n")
+        (display "-f, --file               Find identical blocks in this file\n")
+        (display "--min-size               Minimal size of the block\n")
+        (display "--max-size               Maximal size of the block\n")
+        (display "--min-factor             Maximal size of the block\n")
+        (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
+        (display "-e, --end-line-regexp    Regular expression for the last line of the block\n"))
       (begin
         (if (not (equal? file find-in-this-file))
           (set! find-in-this-file file))
