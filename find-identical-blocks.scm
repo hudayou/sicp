@@ -238,27 +238,28 @@
     hash-table))
 
 (define (pretty-show hash-table)
-  (define (transform x)
-    (vector
-      (block-path x)
-      (block-start x)
-      (block-end x)))
+  (define (footprint x)
+    (display
+      (vector
+        (block-path x)
+        (block-start x)
+        (block-end x)))
+    (newline))
   (hash-for-each
     (lambda (k v)
       (display "Block footprint:")
-      (display " ")
+      (newline)
       (if (> (length v) 2)
         (begin
-          (display
-            (map transform (list-head v 2)))
-          (display " ")
+            (for-each footprint (list-head v 2))
           (display (- (length v) 2))
-          (display " more .."))
-        (display (map transform v)))
-      (newline)
+          (display " more ..")
+          (newline))
+        (for-each footprint v))
       (display "Block content:")
       (newline)
       (display (block-content (car v)))
+      (newline)
       (newline))
     hash-table))
 
