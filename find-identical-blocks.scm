@@ -138,10 +138,15 @@
     (and ((car filters) param)
          (and-filters (cdr filters) param))))
 
-;; start-line may start with '-
-(define start-line-regexp "^\\s+[-a-z]+:\\s*[|>]*\\s*$")
-;; end-line may not start with '-
-(define end-line-regexp "^\\s+[.a-z].*$")
+;; defaults to accept any block
+;; as an example, you can use the following cmd line to search a list
+;; block in a yaml file:
+;; fib -s "^\\s+[-a-z]+:\\s*[|>]*\\s*$" -e "^\\s+[.a-z].*$") -f file
+
+;; accept any start-line
+(define start-line-regexp ".*")
+;; accept any end-line
+(define end-line-regexp ".*")
 
 ;; filter start-line and end-line by regular expression
 (define (se-filter list-of-lines)
