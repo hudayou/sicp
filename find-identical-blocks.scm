@@ -43,26 +43,22 @@
 
 ;; How a code block record looks like?
 ;; A vector looks like below:
-;; #(hash-of-block path-to-file start-line end-line)
+;; #(path-to-file start-line end-line)
 
-(define (make-block start-line end-line path-to-file list-of-lines)
+(define (make-block path-to-file start-line end-line)
   (vector
-    (string-hash (string-join list-of-lines delimiter-string))
     path-to-file
     start-line
     end-line))
 
-(define (block-hash block)
+(define (block-path block)
   (vector-ref block 0))
 
-(define (block-path block)
+(define (block-start block)
   (vector-ref block 1))
 
-(define (block-start block)
-  (vector-ref block 2))
-
 (define (block-end block)
-  (vector-ref block 3))
+  (vector-ref block 2))
 
 (define (block-size block)
   (if (pair? block)
@@ -79,9 +75,6 @@
         bsize)
       delimiter-string)))
 
-(define (block? block)
-  (vector? block))
-
 (define (block-overlaps? block1 block2)
   (or
     (and (>= (block-start block1) (block-start block2))
@@ -90,10 +83,6 @@
     (and (<= (block-start block1) (block-start block2))
          (>= (block-end block1) (block-end block2))
          (string=? (block-path block1) (block-path block2)))))
-
-(define (block-hash=? block1 block2)
-  (= (block-hash block1)
-     (block-hash block2)))
 
 ;; A block list is a list of blocks with same content
 
@@ -178,6 +167,12 @@
 
 (define block-hash-table (make-hash-table))
 
+(define (hash-block list-of-lines)
+  (string-hash
+    (string-join
+      list-of-lines
+      delimiter-string)))
+
 (define (build-block-hash-table file hash-table)
   (define list-of-lines (read-lines file))
   (define (build-hash-table line-list start-line)
@@ -188,26 +183,27 @@
         (build-hash-table (cdr line-list) (+ start-line 1)))))
   (define (update-hash-table line-list start-line)
     (for-each
-      (lambda (b)
-        (let ((b-key (block-hash b)))
-          (let ((b-value (hash-ref hash-table b-key)))
+      (lambda (x)
+        (let* ((b-key (car x))
+               (b (cdr x))
+               (b-value (hash-ref hash-table b-key)))
             (if b-value
               (hash-set! hash-table b-key (cons b b-value))
-              (hash-set! hash-table b-key (list b))))))
+              (hash-set! hash-table b-key (list b)))))
       (build-blocks line-list start-line)))
   (define (filter-block-content list-of-lines)
     (and-filters block-filters list-of-lines))
   (define (build-blocks line-list start-line)
-    (filter block?
+    (filter pair?
             (map
               (lambda (bsize)
                 (let ((list-of-lines (list-head line-list bsize)))
                   (if (filter-block-content list-of-lines)
-                    (make-block
-                      start-line
-                      (+ start-line bsize -1)
-                      file
-                      list-of-lines))))
+                    (cons (hash-block list-of-lines)
+                          (make-block
+                            file
+                            start-line
+                            (+ start-line bsize -1))))))
               (enumerate-interval min-block-size
                                   (let ((no-of-lines (length line-list)))
                                     (if (< no-of-lines max-block-size)
@@ -250,11 +246,7 @@
 
 (define (pretty-show hash-table)
   (define (footprint x)
-    (display
-      (vector
-        (block-path x)
-        (block-start x)
-        (block-end x)))
+    (display x)
     (newline))
   (hash-for-each
     (lambda (k v)
