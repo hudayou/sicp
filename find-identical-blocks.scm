@@ -233,25 +233,6 @@
     (hash-map->list cons hash-table))
   hash-table)
 
-(define (hash-show hash-table)
-  (hash-for-each
-    (lambda (k v)
-      (if (> (length v) 1)
-        (begin
-          (display k)
-          (display "\t***\t")
-          (if (> (length v) 2)
-            (begin
-              (display (list-head v 2))
-              (newline)
-              (display (- (length v) 2))
-              (display " more .."))
-            (display v))
-          (newline)
-          (display (block-content (car v)))
-          (newline))))
-    hash-table))
-
 (define (pretty-show hash-table)
   (define (footprint x)
     (display
