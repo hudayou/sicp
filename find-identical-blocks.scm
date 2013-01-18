@@ -340,7 +340,7 @@
         (display "-f, --file               Find identical blocks in this file\n")
         (display "--min-size               Minimal size of the block\n")
         (display "--max-size               Maximal size of the block\n")
-        (display "--min-factor             Maximal size of the block\n")
+        (display "--min-factor             Minimal times a block is repeated\n")
         (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
         (display "-e, --end-line-regexp    Regular expression for the last line of the block\n"))
       (begin
