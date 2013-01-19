@@ -160,9 +160,9 @@
 (define (remove-single-blocks hash-table)
   (for-each
     (lambda (x)
-      (let ((block-length (length (cdr x))))
-        (if (or (< block-length min-repeat-factor)
-                (> block-length max-repeat-factor))
+      (let ((repeat-factor (length (cdr x))))
+        (if (or (< repeat-factor min-repeat-factor)
+                (> repeat-factor max-repeat-factor))
           (hash-remove! hash-table (car x)))))
     (hash-map->list cons hash-table))
   hash-table)
