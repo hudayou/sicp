@@ -132,68 +132,75 @@
 (define (end-segment segment)
   (cdr segment))
 
-(define (outline-painter)
-  (lambda (frame)
-    (let ((bottom-left (make-vect 0 0))
-          (bottom-right (make-vect 1 0))
-          (top-left (make-vect 0 1))
-          (top-right (make-vect 1 1)))
-      ((segments->painter
-         (list 
-           (make-segment bottom-left bottom-right)
-           (make-segment bottom-right top-right)
-           (make-segment top-right top-left)
-           (make-segment top-left bottom-left)))
-       frame))))
+(define (outline-painter frame)
+  (let ((bottom-left (make-vect 0 0))
+        (bottom-right (make-vect 1 0))
+        (top-left (make-vect 0 1))
+        (top-right (make-vect 1 1)))
+    ((segments->painter
+       (list 
+         (make-segment bottom-left bottom-right)
+         (make-segment bottom-right top-right)
+         (make-segment top-right top-left)
+         (make-segment top-left bottom-left)))
+     frame)))
 
-(define (x-painter)
-  (lambda (frame)
-    (let ((bottom-left (make-vect 0 0))
-          (bottom-right (make-vect 1 0))
-          (top-left (make-vect 0 1))
-          (top-right (make-vect 1 1)))
-      ((segments->painter
-         (list 
-           (make-segment bottom-left top-right)
-           (make-segment bottom-right top-left)))
-       frame))))
+(define (x-painter frame)
+  (let ((bottom-left (make-vect 0 0))
+        (bottom-right (make-vect 1 0))
+        (top-left (make-vect 0 1))
+        (top-right (make-vect 1 1)))
+    ((segments->painter
+       (list 
+         (make-segment bottom-left top-right)
+         (make-segment bottom-right top-left)))
+     frame)))
 
-(define (diamond-painter)
-  (lambda (frame)
-    (let ((left (make-vect 0 0.5))
-          (right (make-vect 1 0.5))
-          (top (make-vect 0.5 1))
-          (bottom (make-vect 0.5 0)))
-      ((segments->painter
-         (list 
-           (make-segment left top)
-           (make-segment top right)
-           (make-segment right bottom)
-           (make-segment bottom left)
-           ))
-       frame))))
+(define (diamond-painter frame)
+  (let ((left (make-vect 0 0.5))
+        (right (make-vect 1 0.5))
+        (top (make-vect 0.5 1))
+        (bottom (make-vect 0.5 0)))
+    ((segments->painter
+       (list 
+         (make-segment left top)
+         (make-segment top right)
+         (make-segment right bottom)
+         (make-segment bottom left)))
+     frame)))
+
+(define (right-arrow-painter frame)
+  (let ((left (make-vect 0 0.5))
+        (right (make-vect 1 0.5))
+        (top (make-vect 0.5 1))
+        (bottom (make-vect 0.5 0)))
+    ((segments->painter
+       (list 
+         (make-segment left right)
+         (make-segment top right)
+         (make-segment right bottom)))
+     frame)))
 
 ;; TODO: wave painter?
-(define (wave-painter)
-  (lambda (frame)
-    (let ((left-eye-left    (make-vect 0.125 0.625))
-          (left-eye-top     (make-vect 0.25  0.875))
-          (left-eye-right   (make-vect 0.375 0.625))
-          (right-eye-left   (make-vect 0.625 0.625))
-          (right-eye-top    (make-vect 0.75  0.875))
-          (right-eye-right  (make-vect 0.875 0.625))
-          (mouth-left       (make-vect 0.25  0.5))
-          (mouth-right      (make-vect 0.75  0.5))
-          (mouth-bottom     (make-vect 0.5   0.25)))
-      ((segments->painter
-         (list 
-           (make-segment left-eye-left left-eye-top)
-           (make-segment left-eye-top left-eye-right)
-           (make-segment right-eye-left right-eye-top)
-           (make-segment right-eye-top right-eye-right)
-           (make-segment mouth-left mount-bottom)
-           (make-segment mouth-bottom mount-right)))
-       frame))))
+(define (wave-painter frame)
+  (let ((left-eye-left    (make-vect 0.125 0.625))
+        (left-eye-top     (make-vect 0.25  0.875))
+        (left-eye-right   (make-vect 0.375 0.625))
+        (right-eye-left   (make-vect 0.625 0.625))
+        (right-eye-top    (make-vect 0.75  0.875))
+        (right-eye-right  (make-vect 0.875 0.625))
+        (mouth-left       (make-vect 0.25  0.5))
+        (mouth-right      (make-vect 0.75  0.5))
+        (mouth-bottom     (make-vect 0.5   0.25)))
+    ((segments->painter
+       (list 
+         (make-segment left-eye-left left-eye-top)
+         (make-segment left-eye-top left-eye-right)
+         (make-segment right-eye-left right-eye-top)
+         (make-segment right-eye-top right-eye-right)
+         (make-segment mouth-left mouth-bottom)
+         (make-segment mouth-bottom mouth-right)))
+     frame)))
 
 (define (transform-painter painter origin corner1 corner2)
   (lambda (frame)
@@ -279,8 +286,9 @@
         (paint-bottom frame)))))
 
 (define (below painter1 painter2)
-  (rotate270
-    (beside painter2 painter1)))
+  (rotate90
+    (beside (rotate270 painter1)
+            (rotate270 painter2))))
 
 (define right-split (split beside below))
 (define up-split (split below beside))
@@ -300,3 +308,43 @@
             (corner (corner-split painter (- n 1))))
         (beside (below painter top-left)
                 (below bottom-right corner))))))
+
+(use-modules (ice-9 format))
+
+(use-modules (ice-9 popen))
+
+(define gnuplot-port (open-output-pipe "gnuplot"))
+
+(define (init-gnuplot width height)
+  (let ((port gnuplot-port))
+    (display "set multiplot\n" port)
+    (display "set parametric\n" port)
+    (format port "set xrange [-~d:~d]\n" width width)
+    (format port "set yrange [-~d:~d]\n" height height)
+    (display "set size ratio -1\n" port)
+    (display "unset xtics\n" port)
+    (display "unset ytics\n" port)
+    port))
+
+(define (cleanup-gnuplot)
+  (let ((port gnuplot-port))
+    (if (not (eqv? 0 (status:exit-val (close-pipe port))))
+      (error "cleanup-gnuplot error"))))
+
+(define (reset-display)
+  (let ((port gnuplot-port))
+    (display "clear\n" port)))
+
+(define (draw-line vect1 vect2)
+  (let ((port gnuplot-port)
+        (x1 (xcor-vect vect1))
+        (x2 (xcor-vect vect2))
+        (y1 (ycor-vect vect1))
+        (y2 (ycor-vect vect2)))
+    (format
+      port
+      "plot [0:1] ~f + ~f * t, ~f + ~f * t notitle\n"
+      x1
+      (- x2 x1)
+      y1
+      (- y2 y1))))
