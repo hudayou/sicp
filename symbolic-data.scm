@@ -24,5 +24,6 @@
 
 ;; prints quote
 ;; since the interpreter will interpret it as
-;; '(quote abracadabra)
+;; '(quote abracadabra) or
+;; (car (quote (quote abracadabra)))
 (car ''abracadabra)
