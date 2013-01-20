@@ -88,6 +88,50 @@
         ((and (number? m1) (number? m2)) (* m1 m2))
         (else (list '* m1 m2))))
 
+;; (make-sum 'a 'b 'c)
+;; (+ a b c)
+
+(use-modules (srfi srfi-1))
+
+(define (make-acc proc init op args)
+  (define (acc args)
+    (let* ((folded-args
+             (fold
+               (lambda (a previous)
+                 (let ((carp (car previous))
+                       (cdrp (cdr previous)))
+                   (if (number? a)
+                     (cons (proc carp a) cdrp)
+                     (cons carp (cons a cdrp)))))
+               (list init)
+               (reverse args)))
+           (carf (car folded-args))
+           (cdrf (cdr folded-args)))
+      (cond ((null? cdrf) carf)
+            ((= carf init) cdrf)
+            (else (cons carf cdrf)))))
+  (cond ((null? args) init)
+        ((null? (cdr args)) (car args))
+        (else
+          (let ((acc-of-args (acc args)))
+            (cond ((number? acc-of-args) acc-of-args)
+                  ((= (length acc-of-args) 1) (car acc-of-args))
+                  (else (cons op acc-of-args)))))))
+
+(define (make-sum . args)
+  (make-acc + 0 '+ args))
+
+(define (addend s) (cadr s))
+
+(define (augend s) (apply make-sum (cddr s)))
+
+(define (make-prod . args)
+  (make-acc * 1 '* args))
+
+(define (multiplier s) (cadr s))
+
+(define (multiplicand s) (apply make-prod (cddr s)))
+
 (pretty-print (deriv '(+ x 3) 'x))
 (pretty-print (deriv '(* x y) 'x))
 (pretty-print (deriv '(* (* x y) (+ x 3)) 'x))
@@ -95,3 +139,4 @@
 (pretty-print (deriv '(** u 0) 'u))
 (pretty-print (deriv '(** u 1) 'u))
 (pretty-print (deriv '(+ (* (** y n) x) (* (** x m) y)) 'x))
+(pretty-print (deriv '(* x y (+ x 3)) 'x))
