@@ -21,3 +21,8 @@
          (equal? (cdr x)
                  (cdr y)))
     (eq? x y)))
+
+;; prints quote
+;; since the interpreter will interpret it as
+;; '(quote abracadabra)
+(car ''abracadabra)
