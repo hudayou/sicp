@@ -130,3 +130,6 @@
 
 (pretty-print (deriv '(x + (3 * (x + (y + 2)))) 'x))
 (pretty-print (deriv '((x * y) * (x + 3)) 'x))
+(pretty-print (deriv '(x + 3 * (x + y + 2)) 'x))
+(pretty-print (deriv '(x + 3 * (x + y + 2) + 4 * x + 6 * y) 'x))
+(pretty-print (deriv '(x * 3 * (x + y + 2) * 4 * x * 6 * y) 'x))
