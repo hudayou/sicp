@@ -125,12 +125,35 @@
 
 (define (augend s) (apply make-sum (cddr s)))
 
-(define (make-prod . args)
-  (make-acc * 1 '* args))
+(define (make-product . args)
+  (define (acc args)
+    (let* ((folded-args
+             (fold
+               (lambda (a previous)
+                 (let ((carp (car previous))
+                       (cdrp (cdr previous)))
+                   (if (number? a)
+                     (cons (* carp a) cdrp)
+                     (cons carp (cons a cdrp)))))
+               (list 1)
+               (reverse args)))
+           (carf (car folded-args))
+           (cdrf (cdr folded-args)))
+      (cond ((null? cdrf) carf)
+            ((= carf 0) carf)
+            ((= carf 1) cdrf)
+            (else (cons carf cdrf)))))
+  (cond ((null? args) 1)
+        ((null? (cdr args)) (car args))
+        (else
+          (let ((acc-of-args (acc args)))
+            (cond ((number? acc-of-args) acc-of-args)
+                  ((= (length acc-of-args) 1) (car acc-of-args))
+                  (else (cons '* acc-of-args)))))))
 
 (define (multiplier s) (cadr s))
 
-(define (multiplicand s) (apply make-prod (cddr s)))
+(define (multiplicand s) (apply make-product (cddr s)))
 
 (pretty-print (deriv '(+ x 3) 'x))
 (pretty-print (deriv '(* x y) 'x))
