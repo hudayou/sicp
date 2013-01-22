@@ -76,24 +76,28 @@
         (cond ((> x carm) (adjoin x (cons carm less) cdrm))
               ((= x carm)
                (append (reverse (cons x less)) cdrm))
-              (else
-                (append (reverse (cons x less)) more))))))
+              ((> x carm)
+               (append (reverse (cons x less)) more))))))
   (adjoin x '() set))
 
-;; '(1 3 5) '(7 8 9)
+;; '(1 3 5) '(4 8 9)
 (define (union-set set1 set2)
-  (define (union s1 s2)
-    (cond ((null? s1) s2)
-          ((null? s2) s1)
+  ;; s3 is a set whoes elements are less than
+  ;; any elements in s1 and s2
+  ;; elements in s3 are in order opposite to elements
+  ;; in s1 and s2
+  (define (union s1 s2 s3)
+    (cond ((null? s1) (append (reverse s3) s2))
+          ((null? s2) (append (reverse s3) s1))
           (else
             (let ((car1 (car s1))
                   (cdr1 (cdr s1))
                   (car2 (car s2))
                   (cdr2 (cdr s2)))
               (cond ((< car1 car2)
-                     (append (reverse s1) s2))
+                     (union cdr1 s2 (cons car1 s3)))
                     ((= car1 car2)
-                     (append (reverse cdr1) s2))
-                    (else
-                      (union cdr1 (adjoin-set car1 s2))))))))
-  (union (reverse set1) set2))
+                     (union cdr1 cdr2 (cons car1 s3)))
+                    ((> car1 car2)
+                     (union s1 cdr2 (cons car2 s3))))))))
+  (union set1 set2 '()))
