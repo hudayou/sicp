@@ -134,6 +134,45 @@
          (make-tree (entry set)
                     (left-branch set)
                     (adjoin-set x (right-branch set))))))
+
+(define (union-set set1 set2)
+  (define (union s1 s2 s3)
+    (cond ((null? s1) (append (reverse s3) s2))
+          ((null? s2) (append (reverse s3) s1))
+          (else
+            (let ((car1 (car s1))
+                  (cdr1 (cdr s1))
+                  (car2 (car s2))
+                  (cdr2 (cdr s2)))
+              (cond ((< car1 car2)
+                     (union cdr1 s2 (cons car1 s3)))
+                    ((= car1 car2)
+                     (union cdr1 cdr2 (cons car1 s3)))
+                    ((> car1 car2)
+                     (union s1 cdr2 (cons car2 s3))))))))
+  (let ((s1 (tree->list-2 set1))
+        (s2 (tree->list-2 set2)))
+    (let ((s3 (union s1 s2 '())))
+      (list->tree s3))))
+
+(define (intersection-set set1 set2)
+  (define (intersect set1 set2)
+    (if (or (null? set1) (null? set2))
+      '()
+      (let ((x1 (car set1)) (x2 (car set2)))
+        (cond ((= x1 x2)
+               (cons x1
+                     (intersect (cdr set1)
+                                (cdr set2))))
+              ((< x1 x2)
+               (intersect (cdr set1) set2))
+              ((< x2 x1)
+               (intersect set1 (cdr set2)))))))
+  (let ((s1 (tree->list-2 set1))
+        (s2 (tree->list-2 set2)))
+    (let ((s3 (intersect s1 s2)))
+      (list->tree s3))))
+
 ;; T(tree) = T(left-tree) + T(right-tree)
 ;; recursive process
 ;;
@@ -190,3 +229,64 @@
              (make-tree 9
                         (make-tree 7 '() '())
                         (make-tree 11 '() '()))))
+
+(define tree-4
+  (make-tree 6
+             (make-tree 5
+                        (make-tree 1 '() '())
+                        '())
+             (make-tree 9
+                        (make-tree 8 '() '())
+                        (make-tree 11 '() '()))))
+
+(define tree-5
+  (make-tree 4
+             (make-tree 3
+                        (make-tree 1 '() '())
+                        '())
+             (make-tree 8
+                        (make-tree 7 '() '())
+                        (make-tree 11 '() '()))))
+
+(define (list->tree elements)
+  (car (partial-tree elements (length elements))))
+
+;; create a binary tree with n elements from list elts
+;; size of elts must be greater than or equal to n
+;;
+;; base case:
+;; n = 0, (() elts) is returned
+;; otherwise:
+;; take floor of (n-1)/2 as left-size elements from elts to be left tree,
+;; take the first element of the remaining list as root,
+;; take n - left-size - 1 elements from the elements left in elts
+;; to be the right tree.
+;; make a tree from root ,left tree and right tree
+;; then cons the tree with the other elements in elts
+;;
+;; (list->tree '(1 3 5 7 9 11)) looks like below:
+;;                     5
+;;                 1       9
+;;                    3 7     11
+;;
+;; T(n) = T(floor of (n-1)/2) + T(n - 1 - floor of (n-1)/2) + O(1)
+;; let's be sloppy here, since O(1) is polynominal smaller than O(n)
+;; aka O(n^(log2 of 2))
+;; we can apply master theorem case 1:
+;; T(n) = 2T(n/2) + O(1)
+;;      = O(n)
+(define (partial-tree elts n)
+  (if (= n 0)
+    (cons '() elts)
+    (let ((left-size (quotient (- n 1) 2)))
+      (let ((left-result (partial-tree elts left-size)))
+        (let ((left-tree (car left-result))
+              (non-left-elts (cdr left-result))
+              (right-size (- n (+ left-size 1))))
+          (let ((this-entry (car non-left-elts))
+                (right-result (partial-tree (cdr non-left-elts)
+                                            right-size)))
+            (let ((right-tree (car right-result))
+                  (remaining-elts (cdr right-result)))
+              (cons (make-tree this-entry left-tree right-tree)
+                    remaining-elts))))))))
