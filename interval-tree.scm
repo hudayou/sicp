@@ -1,5 +1,4 @@
-;; An interval tree is an augmented red-black tree which supports operations
-;; on dynamic sets of intervals.
+;; An interval tree implemented as a treap
 
 (define nil '())
 
@@ -19,23 +18,27 @@
     (and (<= low1 high2)
          (<= low2 high1))))
 
+(define (interval-less? interval1 interval2)
+  (let ((low1 (interval-low interval1))
+        (low2 (interval-low interval2)))
+    (< low1 low2)))
+
+(define (interval-equal? interval1 interval2)
+  (equal? interval1 interval2))
+
 ;; An node is a list
-;; (color interval highest)
-(define (make-node color interval highest)
-  (list color interval highest))
+;; (key priority value)
+(define (make-node key priority value)
+  (list key priority value))
 
-(define (node-color node) (car node))
+(define (node-key node) (car node))
 
-(define (node-interval node) (cadr node))
+(define (node-priority node) (cadr node))
 
-(define (node-highest node) (caddr node))
-
-(define (node-key node)
-  (interval-low
-    (node-interval node)))
+(define (node-value node) (caddr node))
 
 (define (node-overlaps-interval? node interval)
-  (interval-overlaps? (node-interval node) interval))
+  (interval-overlaps? (node-key node) interval))
 
 ;; A tree is list
 ;; (node left right)
@@ -48,14 +51,13 @@
 
 (define (tree-right tree) (caddr tree))
 
-(define (tree-overlaps-interval? tree interval)
-  (if (null? tree)
-    #f
-    (let ((highest (node-highest (tree-node tree)))
-          (low (interval-low interval)))
-      (>= highest low))))
-
 (define (interval-search interval tree)
+  (define (tree-overlaps-interval? tree interval)
+    (if (null? tree)
+      #f
+      (let ((value (node-value (tree-node tree)))
+            (low (interval-low interval)))
+        (>= value low))))
   (if (null? tree)
     #f
     (let ((node (tree-node tree))
@@ -68,36 +70,149 @@
             (else
               (interval-search interval right))))))
 
+(define (random-priority)
+  (random:uniform))
+
+(define (time-priority)
+  (let ((time (gettimeofday)))
+    (let ((second (car time))
+          (microsecond (cdr time)))
+      (- (+ (* second 1000000) microsecond)))))
+
 (define (interval-insert interval tree)
-  (define (discolor color)
-    (cond ((eq? color 'black) 'red)
-          ((eq? color 'red) 'black)))
-  (define (node-discolor node)
-    (let ((color (node-color node))
-          (interval (node-interval node))
-          (highest (node-highest node)))
-      (make-node (discolor color) interval highest)))
-  (define (fixup-root tree)
-    (let ((left (tree-left tree))
-          (right (tree-right tree))
-          (node (tree-node tree)))
-      (make-tree (node-discolor node) left right)))
-  (define (insert interval tree)
+  (define (priority-less? tree1 tree2)
+    (let ((priority1 (node-priority (tree-node tree1)))
+          (priority2 (node-priority (tree-node tree2))))
+      (< priority1 priority2)))
+  (define (tree-value tree)
     (if (null? tree)
-      (make-tree (make-node 'red interval (interval-high interval)) nil nil)
-      (let ((low (interval-low interval))
-            (node (tree-node tree))
+      -inf.0
+      (node-value (tree-node tree))))
+  (define (update-node-value node value)
+    (let ((key (node-key node))
+          (priority (node-priority node)))
+      (make-node key priority value)))
+  (define (update-tree-value tree)
+    (if (null? tree)
+      tree
+      (let ((node (tree-node tree))
             (left (tree-left tree))
             (right (tree-right tree)))
-        (let (key (node-key node))
-          (if (low < key)
-            (fixup-insert
-              (make-tree node
-                         (insert interval left)
-                         right))
-            (fixup-insert
-              (make-tree node
-                         left
-                         (insert interval right))))))))
-  (fixup-root
-    (insert interval tree)))
+        (make-tree
+          (update-node-value node
+                             (max (tree-value tree)
+                                  (tree-value left)
+                                  (tree-value right)))
+          left
+          right))))
+  (define (fixup tree)
+    (let ((node (tree-node tree))
+          (left (tree-left tree))
+          (right (tree-right tree)))
+      (cond ((and (null? left) (null? right))
+             tree)
+            ((null? left)
+             (if (priority-less? right tree)
+               (update-tree-value tree)
+               (let ((left-of-right (tree-left right))
+                     (right-of-right (tree-right right))
+                     (node-of-right (tree-node right)))
+                 (update-tree-value
+                   (make-tree
+                     node-of-right
+                     (update-tree-value
+                       (make-tree
+                         node
+                         nil
+                         left-of-right))
+                     right-of-right)))))
+            ((null? right)
+             (if (priority-less? left tree)
+               (update-tree-value tree)
+               (let ((left-of-left (tree-left left))
+                     (right-of-left (tree-right left))
+                     (node-of-left (tree-node left)))
+                 (update-tree-value
+                   (make-tree
+                     node-of-left
+                     left-of-left
+                     (update-tree-value
+                       (make-tree
+                         node
+                         right-of-left
+                         nil)))))))
+            (else
+              (let ((left-of-right (tree-left right))
+                    (right-of-right (tree-right right))
+                    (node-of-right (tree-node right))
+                    (left-of-left (tree-left left))
+                    (right-of-left (tree-right left))
+                    (node-of-left (tree-node left)))
+                (cond ((priority-less? tree left)
+                       (update-tree-value
+                         (make-tree
+                           node-of-left
+                           left-of-left
+                           (update-tree-value
+                             (make-tree
+                               node
+                               right-of-left
+                               right)))))
+                      ((priority-less? tree right)
+                       (update-tree-value
+                         (make-tree
+                           node-of-right
+                           (update-tree-value
+                             (make-tree
+                               node
+                               left
+                               left-of-right))
+                           right-of-right)))
+                      (else
+                        (update-tree-value tree))))))))
+  (define (insert interval tree)
+    (if (null? tree)
+      (make-tree
+        (make-node interval
+                   (random-priority)
+                   (interval-high interval))
+        nil
+        nil)
+      (let ((node (tree-node tree))
+            (left (tree-left tree))
+            (right (tree-right tree)))
+        (let ((key (node-key node)))
+          (cond ((interval-less? interval key)
+                 (fixup
+                   (make-tree node
+                              (insert interval left)
+                              right)))
+                ;; swallow duplicate insertions
+                ((interval-equal? interval key)
+                 tree)
+                ;; todo: flip a coin to decide to go left or right,
+                ;; if low part of interval and key equal.
+                (else
+                  (fixup
+                    (make-tree node
+                               left
+                               (insert interval right)))))))))
+  (insert interval tree))
+
+(use-modules (ice-9 pretty-print))
+
+(define tree-1 (interval-insert
+                 '(2 . 5)
+                 (interval-insert
+                   '(4 . 7)
+                   (interval-insert
+                     '(6 . 9)
+                     (interval-insert
+                       '(8 . 11)
+                       (interval-insert
+                         '(10 . 13)
+                         (interval-insert
+                           '(12 . 15)
+                           '())))))))
+
+(pretty-print tree-1)
