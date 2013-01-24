@@ -1,6 +1,8 @@
 ;; An interval tree is an augmented red-black tree which supports operations
 ;; on dynamic sets of intervals.
 
+(define nil '())
+
 ;; An interval is a pair
 ;; (low . high)
 (define (make-interval low high) (cons low high))
@@ -65,3 +67,37 @@
              (interval-search interval left))
             (else
               (interval-search interval right))))))
+
+(define (interval-insert interval tree)
+  (define (discolor color)
+    (cond ((eq? color 'black) 'red)
+          ((eq? color 'red) 'black)))
+  (define (node-discolor node)
+    (let ((color (node-color node))
+          (interval (node-interval node))
+          (highest (node-highest node)))
+      (make-node (discolor color) interval highest)))
+  (define (fixup-root tree)
+    (let ((left (tree-left tree))
+          (right (tree-right tree))
+          (node (tree-node tree)))
+      (make-tree (node-discolor node) left right)))
+  (define (insert interval tree)
+    (if (null? tree)
+      (make-tree (make-node 'red interval (interval-high interval)) nil nil)
+      (let ((low (interval-low interval))
+            (node (tree-node tree))
+            (left (tree-left tree))
+            (right (tree-right tree)))
+        (let (key (node-key node))
+          (if (low < key)
+            (fixup-insert
+              (make-tree node
+                         (insert interval left)
+                         right))
+            (fixup-insert
+              (make-tree node
+                         left
+                         (insert interval right))))))))
+  (fixup-root
+    (insert interval tree)))
