@@ -344,6 +344,12 @@
                  (not (eqv? no str-no)))
           (set! no str-no))))
     no)
+  (define (set-rex-from-str rex str)
+    (if (and (string? str)
+             (regexp? (make-regexp str))
+             (not (equal? rex str)))
+      str
+      rex))
   (let* ((option-spec '((help (single-char #\h) (value #f))
                         (file (single-char #\f) (value #t))
                         (start-line-regexp (single-char #\s) (value #t))
@@ -360,9 +366,9 @@
          (file
            (option-ref options 'file #f))
          (srex
-           (option-ref options 'start-line-regexp start-line-regexp))
+           (option-ref options 'start-line-regexp #f))
          (erex
-           (option-ref options 'end-line-regexp end-line-regexp))
+           (option-ref options 'end-line-regexp #f))
          (xfind
            (option-ref options 'cross-find #f))
          (max-lines
@@ -389,10 +395,10 @@
         (display "--min-factor             Minimal times a block is repeated\n")
         (display "--max-factor             Maximal times a block is repeated\n"))
       (begin
-        (if (not (equal? srex start-line-regexp))
-          (set! start-line-regexp srex))
-        (if (not (equal? erex end-line-regexp))
-          (set! end-line-regexp erex))
+        (set! start-line-regexp
+          (set-rex-from-str start-line-regexp srex))
+        (set! end-line-regexp
+          (set-rex-from-str end-line-regexp erex))
         (if xfind
           (set! cross-find #t))
         (set! max-no-of-lines
