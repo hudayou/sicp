@@ -139,7 +139,7 @@
 ;; defaults to accept any block
 ;; as an example, you can use the following cmd line to search a list
 ;; block in a yaml file:
-;; fib -s "^\\s+[-a-z]+:\\s*[|>]*\\s*$" -e "^\\s+[.a-z].*$") -f file
+;; fib -s "^\\s+[-a-z]+:\\s*[|>]*\\s*$" -e "^\\s+[.a-z].*$" -f file
 
 ;; accept any start-line
 (define start-line-regexp ".*")
