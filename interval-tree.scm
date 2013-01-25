@@ -215,4 +215,18 @@
                            '(12 . 15)
                            '())))))))
 
+(define tree-2 (interval-insert
+                 '(4 . 5)
+                 (interval-insert
+                   '(4 . 7)
+                   (interval-insert
+                     '(4 . 9)
+                     (interval-insert
+                       '(4 . 11)
+                       (interval-insert
+                         '(4 . 13)
+                         (interval-insert
+                           '(4 . 15)
+                           '())))))))
 (pretty-print tree-1)
+(pretty-print tree-2)
