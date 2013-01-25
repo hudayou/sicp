@@ -112,8 +112,7 @@
       (cond ((and (null? left) (null? right))
              tree)
             ((null? left)
-             (if (priority-less? right tree)
-               (update-tree-value tree)
+             (if (priority-less? tree right)
                (let ((left-of-right (tree-left right))
                      (right-of-right (tree-right right))
                      (node-of-right (tree-node right)))
@@ -125,10 +124,10 @@
                          node
                          nil
                          left-of-right))
-                     right-of-right)))))
+                     right-of-right)))
+               (update-tree-value tree)))
             ((null? right)
-             (if (priority-less? left tree)
-               (update-tree-value tree)
+             (if (priority-less? tree left)
                (let ((left-of-left (tree-left left))
                      (right-of-left (tree-right left))
                      (node-of-left (tree-node left)))
@@ -140,7 +139,8 @@
                        (make-tree
                          node
                          right-of-left
-                         nil)))))))
+                         nil)))))
+               (update-tree-value tree)))
             (else
               (let ((left-of-right (tree-left right))
                     (right-of-right (tree-right right))
@@ -190,8 +190,8 @@
                 ;; swallow duplicate insertions
                 ((interval-equal? interval key)
                  tree)
-                ;; todo: flip a coin to decide to go left or right,
-                ;; if low part of interval and key equal.
+                ;; flip a coin to decide to go left or right,
+                ;; if low part of interval and key equal?
                 (else
                   (fixup
                     (make-tree node
