@@ -27,15 +27,17 @@
   (equal? interval1 interval2))
 
 ;; An node is a list
-;; (key priority value)
-(define (make-node key priority value)
-  (list key priority value))
+;; (key priority value data)
+(define (make-node key priority value data)
+  (list key priority value data))
 
 (define (node-key node) (car node))
 
 (define (node-priority node) (cadr node))
 
 (define (node-value node) (caddr node))
+
+(define (node-data node) (cadddr node))
 
 (define (node-overlaps-interval? node interval)
   (interval-overlaps? (node-key node) interval))
@@ -63,8 +65,9 @@
 
 (define (update-node-value node value)
   (let ((key (node-key node))
-        (priority (node-priority node)))
-    (make-node key priority value)))
+        (priority (node-priority node))
+        (data (node-data node)))
+    (make-node key priority value data)))
 
 (define (update-tree-value tree)
   (if (null? tree)
@@ -95,7 +98,7 @@
           (left (tree-left tree))
           (right (tree-right tree)))
       (cond ((node-overlaps-interval? node interval)
-             (node-interval node))
+             (node-data node))
             ((tree-overlaps-interval? left interval)
              (interval-search interval left))
             (else
@@ -110,7 +113,7 @@
           (microsecond (cdr time)))
       (- (+ (* second 1000000) microsecond)))))
 
-(define (interval-insert interval tree)
+(define (interval-insert interval data tree)
   (define (fixup tree)
     (let ((node (tree-node tree))
           (left (tree-left tree))
@@ -176,12 +179,13 @@
                            right-of-right)))
                       (else
                         (update-tree-value tree))))))))
-  (define (insert interval tree)
+  (define (insert interval data tree)
     (if (null? tree)
       (make-tree
         (make-node interval
                    (random-priority)
-                   (interval-high interval))
+                   (interval-high interval)
+                   data)
         nil
         nil)
       (let ((node (tree-node tree))
@@ -191,7 +195,7 @@
           (cond ((interval-less? interval key)
                  (fixup
                    (make-tree node
-                              (insert interval left)
+                              (insert interval data left)
                               right)))
                 ;; swallow duplicate insertions
                 ((interval-equal? interval key)
@@ -202,8 +206,8 @@
                   (fixup
                     (make-tree node
                                left
-                               (insert interval right)))))))))
-  (insert interval tree))
+                               (insert interval data right)))))))))
+  (insert interval data tree))
 
 (define (interval-delete interval tree)
   (define (delete-root tree)
@@ -265,32 +269,47 @@
 
 (define tree-1 (interval-insert
                  '(2 . 5)
+                 'a
                  (interval-insert
                    '(4 . 7)
+                   'b
                    (interval-insert
                      '(6 . 9)
+                     'c
                      (interval-insert
                        '(8 . 11)
+                       'd
                        (interval-insert
                          '(10 . 13)
+                         'e
                          (interval-insert
                            '(12 . 15)
+                           'f
                            '())))))))
 
 (define tree-2 (interval-insert
                  '(4 . 5)
+                 'a
                  (interval-insert
                    '(4 . 7)
+                   'b
                    (interval-insert
                      '(4 . 9)
+                     'c
                      (interval-insert
                        '(4 . 11)
+                       'd
                        (interval-insert
                          '(4 . 13)
+                         'e
                          (interval-insert
                            '(4 . 15)
+                           'f
                            '())))))))
 (pretty-print tree-1)
 (pretty-print tree-2)
 (pretty-print (interval-delete '(8 . 11) tree-1))
 (pretty-print (interval-delete '(4 . 9) tree-2))
+(pretty-print (interval-search '(2 . 3) tree-1))
+(pretty-print (interval-search '(16 . 19) tree-1))
+(pretty-print (interval-search '(0 . 1) tree-1))
