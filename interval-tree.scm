@@ -51,6 +51,37 @@
 
 (define (tree-right tree) (caddr tree))
 
+(define (priority-less? tree1 tree2)
+  (let ((priority1 (node-priority (tree-node tree1)))
+        (priority2 (node-priority (tree-node tree2))))
+    (< priority1 priority2)))
+
+(define (tree-value tree)
+  (if (null? tree)
+    -inf.0
+    (node-value (tree-node tree))))
+
+(define (update-node-value node value)
+  (let ((key (node-key node))
+        (priority (node-priority node)))
+    (make-node key priority value)))
+
+(define (update-tree-value tree)
+  (if (null? tree)
+    tree
+    (let ((node (tree-node tree))
+          (left (tree-left tree))
+          (right (tree-right tree)))
+      (make-tree
+        (update-node-value node
+                           (max (tree-value tree)
+                                (tree-value left)
+                                (tree-value right)))
+        left
+        right))))
+
+;; search, insert, delete on the tree
+
 (define (interval-search interval tree)
   (define (tree-overlaps-interval? tree interval)
     (if (null? tree)
@@ -80,31 +111,6 @@
       (- (+ (* second 1000000) microsecond)))))
 
 (define (interval-insert interval tree)
-  (define (priority-less? tree1 tree2)
-    (let ((priority1 (node-priority (tree-node tree1)))
-          (priority2 (node-priority (tree-node tree2))))
-      (< priority1 priority2)))
-  (define (tree-value tree)
-    (if (null? tree)
-      -inf.0
-      (node-value (tree-node tree))))
-  (define (update-node-value node value)
-    (let ((key (node-key node))
-          (priority (node-priority node)))
-      (make-node key priority value)))
-  (define (update-tree-value tree)
-    (if (null? tree)
-      tree
-      (let ((node (tree-node tree))
-            (left (tree-left tree))
-            (right (tree-right tree)))
-        (make-tree
-          (update-node-value node
-                             (max (tree-value tree)
-                                  (tree-value left)
-                                  (tree-value right)))
-          left
-          right))))
   (define (fixup tree)
     (let ((node (tree-node tree))
           (left (tree-left tree))
@@ -199,6 +205,62 @@
                                (insert interval right)))))))))
   (insert interval tree))
 
+(define (interval-delete interval tree)
+  (define (delete-root tree)
+    (let ((node (tree-node tree))
+          (left (tree-left tree))
+          (right (tree-right tree)))
+      (cond ((and (null? left) (null? right))
+             nil)
+            ((null? left)
+             right)
+            ((null? right)
+             left)
+            (else
+              (let ((left-of-right (tree-left right))
+                    (right-of-right (tree-right right))
+                    (node-of-right (tree-node right))
+                    (left-of-left (tree-left left))
+                    (right-of-left (tree-right left))
+                    (node-of-left (tree-node left)))
+                (if (priority-less? left right)
+                  (update-tree-value
+                    (make-tree
+                      node-of-right
+                      (delete-root
+                        (make-tree
+                          node
+                          left
+                          left-of-right))
+                      right-of-right))
+                  (update-tree-value
+                    (make-tree
+                      node-of-left
+                      left-of-left
+                      (delete-root
+                        (make-tree
+                          node
+                          right-of-left
+                          right))))))))))
+  (define (delete interval tree)
+    (if (null? tree)
+      tree
+      (let ((node (tree-node tree))
+            (left (tree-left tree))
+            (right (tree-right tree)))
+        (let ((key (node-key node)))
+          (cond ((interval-less? interval key)
+                 (make-tree node
+                            (delete interval left)
+                            right))
+                ((interval-equal? interval key)
+                 (delete-root tree))
+                (else
+                  (make-tree node
+                             left
+                             (delete interval right))))))))
+  (delete interval tree))
+
 (use-modules (ice-9 pretty-print))
 
 (define tree-1 (interval-insert
@@ -230,3 +292,5 @@
                            '())))))))
 (pretty-print tree-1)
 (pretty-print tree-2)
+(pretty-print (interval-delete '(8 . 11) tree-1))
+(pretty-print (interval-delete '(4 . 9) tree-2))
