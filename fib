@@ -181,8 +181,9 @@
       list-of-lines
       delimiter-string)))
 
-(define (exceed-max-no-of-lines? no-of-lines)
-  (< max-no-of-lines no-of-lines))
+(define (expected-no-of-lines? no-of-lines)
+  (and (< max-no-of-lines no-of-lines)
+       (< min-block-size no-of-lines)))
 
 (define (build-block-hash-table file hash-table)
   (define list-of-lines (read-lines file))
@@ -220,7 +221,7 @@
                                     (if (< no-of-lines max-block-size)
                                       no-of-lines
                                       max-block-size))))))
-  (if (exceed-max-no-of-lines? (length list-of-lines))
+  (if (expected-no-of-lines? (length list-of-lines))
     hash-table
     (build-hash-table list-of-lines 1)))
 
