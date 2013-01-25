@@ -38,6 +38,10 @@
 ;; The maximum times of a block is repated in the file.
 (define max-repeat-factor 64)
 
+;; The maximum no of lines in the file.
+
+(define max-no-of-lines 20000)
+
 ;; Cross find identical blocks in all files?
 (define cross-find #f)
 
@@ -177,6 +181,9 @@
       list-of-lines
       delimiter-string)))
 
+(define (exceed-max-no-of-lines? no-of-lines)
+  (< max-no-of-lines no-of-lines))
+
 (define (build-block-hash-table file hash-table)
   (define list-of-lines (read-lines file))
   (define (build-hash-table line-list start-line)
@@ -213,7 +220,9 @@
                                     (if (< no-of-lines max-block-size)
                                       no-of-lines
                                       max-block-size))))))
-  (build-hash-table list-of-lines 1))
+  (if (exceed-max-no-of-lines? (length list-of-lines))
+    hash-table
+    (build-hash-table list-of-lines 1)))
 
 (define (hash-empty? hash-table)
   (eq? (hash-map->list cons hash-table) nil))
@@ -333,6 +342,7 @@
                         (start-line-regexp (single-char #\s) (value #t))
                         (end-line-regexp (single-char #\e) (value #t))
                         (cross-find (single-char #\x) (value #f))
+                        (max-lines (value #t))
                         (min-size (value #t))
                         (max-size (value #t))
                         (min-factor (value #t))
@@ -348,6 +358,8 @@
            (option-ref options 'end-line-regexp end-line-regexp))
          (xfind
            (option-ref options 'cross-find #f))
+         (max-lines
+           (option-ref options 'max-lines max-no-of-lines))
          (min-size
            (option-ref options 'min-size min-block-size))
          (max-size
@@ -364,6 +376,7 @@
         (display "-s, --start-line-regexp  Regular expression for the first line of the block\n")
         (display "-e, --end-line-regexp    Regular expression for the last line of the block\n")
         (display "-x, --cross-find         Cross find blocks in all files\n")
+        (display "--max-lines              Skip file with too many lines\n")
         (display "--min-size               Minimal size of the block\n")
         (display "--max-size               Maximal size of the block\n")
         (display "--min-factor             Minimal times a block is repeated\n")
@@ -375,6 +388,9 @@
           (set! end-line-regexp erex))
         (if xfind
           (set! cross-find #t))
+        (if (and (not (equal? max-lines max-no-of-lines))
+                 (integer? (string->number max-lines)))
+          (set! max-no-of-lines (string->number max-lines)))
         (if (and (not (equal? min-size min-block-size))
                  (integer? (string->number min-size)))
           (set! min-block-size (string->number min-size)))
