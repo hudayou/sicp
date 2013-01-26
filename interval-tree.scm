@@ -134,7 +134,7 @@
               (interval-search interval right))))))
 
 (define (interval-traverse-search interval tree)
-  (define combine cons)
+  (define combine hash-insert)
   (define (search-to-result tree result)
     (if (null? tree)
       result
@@ -340,42 +340,42 @@
 
 (define tree-1 (interval-insert
                  '(2 . 5)
-                 'a
+                 19
                  (interval-insert
                    '(4 . 7)
-                   'b
+                   83
                    (interval-insert
                      '(6 . 9)
-                     'c
+                     1
                      (interval-insert
                        '(8 . 11)
-                       'd
+                       27
                        (interval-insert
                          '(10 . 13)
-                         'e
+                         8
                          (interval-insert
                            '(12 . 15)
-                           'f
+                           2
                            '())))))))
 
 (define tree-2 (interval-insert
                  '(4 . 5)
-                 'a
+                 19
                  (interval-insert
                    '(4 . 7)
-                   'b
+                   82
                    (interval-insert
                      '(4 . 9)
-                     'c
+                     85
                      (interval-insert
                        '(4 . 11)
-                       'd
+                       20
                        (interval-insert
                          '(4 . 13)
-                         'e
+                         8
                          (interval-insert
                            '(4 . 15)
-                           'f
+                           4
                            '())))))))
 
 (define (give-me-a-hash-tree size)
