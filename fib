@@ -39,7 +39,6 @@
 (define max-repeat-factor 64)
 
 ;; The maximum no of lines in the file.
-
 (define max-no-of-lines 20000)
 
 ;; Cross find identical blocks in all files?
@@ -78,6 +77,10 @@
         (list-tail (read-lines bpath) (- bstart 1))
         bsize)
       delimiter-string)))
+
+(define (block-interval block)
+  (cons (block-start block)
+        (block-end block)))
 
 (define (block-overlaps? block1 block2)
   (or
@@ -257,6 +260,41 @@
 (define (eat-blocks hash-table)
   (remove-duplicate-entries
     (remove-single-blocks hash-table)))
+
+(define (remove-unrelated-blocks hash-table)
+  (define list-of-blocks
+    ;;'(#("/p/t/f" 1 499) #("/p/t/f" 500 999))
+    '(#("/p/t/f" 1 99) #("/p/t/f" 100 199))
+    )
+  (define interval-tree nil)
+  (define hash-list nil)
+  (define (build-interval-tree hash-table)
+    (hash-for-each
+      (lambda (k v)
+        (for-each
+          (lambda (b)
+            (set! interval-tree
+              (interval-insert (block-interval b)
+                               k
+                               interval-tree)))
+          v))
+      hash-table))
+  (define (find-related-blocks)
+    (for-each
+      (lambda (b)
+        (set! hash-list
+          (append hash-list
+                  (interval-traverse-search (block-interval b)
+                                            interval-tree))))
+      list-of-blocks))
+  (build-interval-tree hash-table)
+  (find-related-blocks)
+  (for-each
+    (lambda (x)
+      (let ((k (car x)))
+        (if (not (member k hash-list))
+          (hash-remove! hash-table k))))
+    (hash-map->list cons hash-table)))
 
 (define (pretty-show hash-table)
   (define (footprint x)
