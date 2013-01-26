@@ -134,24 +134,25 @@
               (interval-search interval right))))))
 
 (define (interval-traverse-search interval tree)
-  (define (search-to-list tree result-list)
+  (define combine cons)
+  (define (search-to-result tree result)
     (if (null? tree)
-      result-list
+      result
       (let ((node (tree-node tree))
             (left (tree-left tree))
             (right (tree-right tree)))
         (let ((value (node-value node)))
           (if (node-overlaps-interval? node interval)
             (if (tree-overlaps-interval? left interval)
-              (search-to-list left
-                              (cons value
-                                    (search-to-list right result-list)))
-              (search-to-list right (cons value result-list)))
+              (search-to-result left
+                                (combine value
+                                         (search-to-result right result)))
+              (search-to-result right (combine value result)))
             (if (tree-overlaps-interval? left interval)
-              (search-to-list left
-                              (search-to-list right result-list))
-              (search-to-list right result-list)))))))
-  (search-to-list tree nil))
+              (search-to-result left
+                                (search-to-result right result))
+              (search-to-result right result)))))))
+  (search-to-result tree nil))
 
 (define (interval-insert interval value tree)
   (treap-insert
