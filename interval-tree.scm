@@ -53,6 +53,13 @@
 
 (define (tree-right tree) (caddr tree))
 
+(define (tree-overlaps-interval? tree interval)
+  (if (null? tree)
+    #f
+    (let ((value (node-value (tree-node tree)))
+          (low (interval-low interval)))
+      (>= value low))))
+
 (define (priority-less? tree1 tree2)
   (let ((priority1 (node-priority (tree-node tree1)))
         (priority2 (node-priority (tree-node tree2))))
@@ -86,12 +93,6 @@
 ;; search, insert, delete on the tree
 
 (define (interval-search interval tree)
-  (define (tree-overlaps-interval? tree interval)
-    (if (null? tree)
-      #f
-      (let ((value (node-value (tree-node tree)))
-            (low (interval-low interval)))
-        (>= value low))))
   (if (null? tree)
     #f
     (let ((node (tree-node tree))
@@ -103,6 +104,24 @@
              (interval-search interval left))
             (else
               (interval-search interval right))))))
+
+(define (interval-traverse-search interval tree)
+  (define (search-to-list tree result-list)
+    (if (null? tree)
+      result-list
+      (let ((node (tree-node tree))
+            (left (tree-left tree))
+            (right (tree-right tree)))
+        (cond ((node-overlaps-interval? node interval)
+               (search-to-list left
+                               (cons (node-data node)
+                                     (search-to-list right result-list))))
+              ((tree-overlaps-interval? left interval)
+               (search-to-list left
+                               (search-to-list right result-list)))
+              (else
+                (search-to-list right result-list))))))
+  (search-to-list tree nil))
 
 (define (random-priority)
   (random:uniform))
