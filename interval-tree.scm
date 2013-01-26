@@ -112,15 +112,17 @@
       (let ((node (tree-node tree))
             (left (tree-left tree))
             (right (tree-right tree)))
-        (cond ((node-overlaps-interval? node interval)
-               (search-to-list left
-                               (cons (node-data node)
-                                     (search-to-list right result-list))))
-              ((tree-overlaps-interval? left interval)
-               (search-to-list left
-                               (search-to-list right result-list)))
-              (else
-                (search-to-list right result-list))))))
+        (let ((data (node-data node)))
+          (if (node-overlaps-interval? node interval)
+            (if (tree-overlaps-interval? left interval)
+              (search-to-list left
+                              (cons data
+                                    (search-to-list right result-list)))
+              (search-to-list right (cons data result-list)))
+            (if (tree-overlaps-interval? left interval)
+              (search-to-list left
+                              (search-to-list right result-list))
+              (search-to-list right result-list)))))))
   (search-to-list tree nil))
 
 (define (random-priority)
