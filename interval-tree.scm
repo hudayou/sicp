@@ -52,6 +52,39 @@
         (priority2 (node-priority (tree-node tree2))))
     (< priority1 priority2)))
 
+;; search, insert, delete on the hash tree
+
+(define (hash-search hash tree)
+  (if (null? tree)
+    #f
+    (let ((node (tree-node tree))
+          (left (tree-left tree))
+          (right (tree-right tree)))
+      (let ((k (node-key node)))
+        (cond ((< hash k)
+               (hash-search hash left))
+              ((= hash k)
+               #t)
+              (else
+                (hash-search hash right)))))))
+
+(define (hash-insert hash tree)
+  (treap-insert
+    hash
+    (time-priority)
+    nil
+    nil
+    tree
+    <
+    identity))
+
+(define (hash-delete hash tree)
+  (treap-delete
+    hash
+    tree
+    <
+    identity))
+
 ;; search, insert, delete on the interval tree
 
 (define (node-overlaps-interval? node interval)
@@ -343,6 +376,18 @@
                            '(4 . 15)
                            'f
                            '())))))))
+
+(define (give-me-a-hash-tree size)
+  (define hash-space (expt 2 15))
+  (let loop ((i 0)
+             (tree nil))
+    (if (> i size)
+      tree
+      (loop (+ i 1)
+            (hash-insert (random hash-space) tree)))))
+
+(define tree-3 (give-me-a-hash-tree (expt 2 4)))
+
 (pretty-print tree-1)
 (pretty-print tree-2)
 (pretty-print (interval-delete '(8 . 11) tree-1))
@@ -350,3 +395,5 @@
 (pretty-print (interval-search '(2 . 3) tree-1))
 (pretty-print (interval-search '(16 . 19) tree-1))
 (pretty-print (interval-search '(0 . 1) tree-1))
+(pretty-print tree-3)
+(pretty-print (hash-search (random 1983) tree-3))
