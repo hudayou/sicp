@@ -229,7 +229,19 @@
     (build-hash-table list-of-lines 1)))
 
 (define (hash-empty? hash-table)
-  (eq? (hash-map->list cons hash-table) nil))
+  (= (hash-length hash-table) 0))
+
+;; read syntax of a hash table is:
+;; #<hash-table 0/31>
+(define (hash-length hash-table)
+  (string->number
+    (cadr
+      (string-split
+        (car
+          (string-split
+            (object->string hash-table)
+            #\/))
+        #\sp))))
 
 (define (remove-duplicate-entries hash-table)
   (define (remove-overlaps k1 v1)
@@ -261,40 +273,57 @@
   (remove-duplicate-entries
     (remove-single-blocks hash-table)))
 
-(define (remove-unrelated-blocks hash-table)
-  (define list-of-blocks
-    ;;'(#("/p/t/f" 1 499) #("/p/t/f" 500 999))
-    '(#("/p/t/f" 1 99) #("/p/t/f" 100 199))
-    )
-  (define interval-tree nil)
-  (define hash-list nil)
+(define list-of-blocks
+  ;;'(#("/p/t/f" 1 499) #("/p/t/f" 500 999))
+  ;;'(#("/p/t/f" 1 99) #("/p/t/f" 100 199))
+  ;;'(#("/p/t/f" 1 9999) #("/p/t/f" 10000 19999))
+  '(#("/p/t/f" 1 4999))
+  )
+
+;; remove blocks which unrelated with blocks in list-of-blocks from
+;; hash-table
+(define (remove-unrelated-blocks list-of-blocks hash-table)
+  (define hash-table-size (hash-length hash-table))
   (define (build-interval-tree hash-table)
-    (hash-for-each
-      (lambda (k v)
-        (for-each
-          (lambda (b)
-            (set! interval-tree
-              (interval-insert (block-interval b)
-                               k
-                               interval-tree)))
-          v))
-      hash-table))
-  (define (find-related-blocks)
-    (for-each
-      (lambda (b)
-        (set! hash-list
-          (append hash-list
-                  (interval-traverse-search (block-interval b)
-                                            interval-tree))))
-      list-of-blocks))
-  (build-interval-tree hash-table)
-  (find-related-blocks)
-  (for-each
-    (lambda (x)
-      (let ((k (car x)))
-        (if (not (member k hash-list))
-          (hash-remove! hash-table k))))
-    (hash-map->list cons hash-table)))
+    (let ((interval-tree nil))
+      (hash-for-each
+        (lambda (k v)
+          (for-each
+            (lambda (b)
+              (set! interval-tree
+                (interval-insert (block-interval b)
+                                 k
+                                 interval-tree)))
+            v))
+        hash-table)
+      interval-tree))
+  (define (build-hash-tree list-of-blocks interval-tree)
+    (let bht ((hash-tree nil)
+              (list-of-blocks list-of-blocks))
+      (if (null? list-of-blocks)
+        hash-tree
+        (let ((hash-tree-size (hash-size hash-tree)))
+          (if (< hash-tree-size hash-table-size)
+            (begin
+              (set! hash-tree
+                (interval-traverse-search (block-interval
+                                           (car list-of-blocks))
+                                          interval-tree
+                                          hash-insert
+                                          hash-tree))
+              (bht hash-tree (cdr list-of-blocks)))
+            hash-tree)))))
+  (let ((interval-tree (build-interval-tree hash-table)))
+    (let ((hash-tree (build-hash-tree list-of-blocks interval-tree)))
+      (let ((hash-tree-size (hash-size hash-tree)))
+        (if (< hash-tree-size hash-table-size)
+          (for-each
+            (lambda (x)
+              (let ((k (car x)))
+                (if (not (hash-search k hash-tree))
+                  (hash-remove! hash-table k))))
+            (hash-map->list cons hash-table))))))
+  hash-table)
 
 (define (pretty-show hash-table)
   (define (footprint x)
