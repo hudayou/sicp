@@ -146,8 +146,7 @@
             (else
               (interval-search interval right))))))
 
-(define (interval-traverse-search interval tree)
-  (define combine hash-insert)
+(define (interval-traverse-search interval tree combine)
   (define (search-to-result tree result)
     (if (null? tree)
       result
