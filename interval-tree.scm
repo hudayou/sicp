@@ -146,7 +146,7 @@
             (else
               (interval-search interval right))))))
 
-(define (interval-traverse-search interval tree combine)
+(define (interval-traverse-search interval tree combine init)
   (define (search-to-result tree result)
     (if (null? tree)
       result
@@ -164,7 +164,7 @@
               (search-to-result left
                                 (search-to-result right result))
               (search-to-result right result)))))))
-  (search-to-result tree nil))
+  (search-to-result tree init))
 
 (define (interval-insert interval value tree)
   (treap-insert
