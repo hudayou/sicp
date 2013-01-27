@@ -82,7 +82,7 @@
   (cons (block-start block)
         (block-end block)))
 
-(define (block-overlaps? block1 block2)
+(define (block-includes? block1 block2)
   (or
     (and (>= (block-start block1) (block-start block2))
          (<= (block-end block1) (block-end block2))
@@ -93,12 +93,12 @@
 
 ;; A block list is a list of blocks with same content
 
-(define (block-list-overlaps? lst1 lst2)
+(define (block-list-includes? lst1 lst2)
   (if (and (null? lst1) (null? lst2))
     #t
     (and (= (length lst1) (length lst2))
-         (block-overlaps? (car lst1) (car lst2))
-         (block-list-overlaps? (cdr lst1) (cdr lst2)))))
+         (block-includes? (car lst1) (car lst2))
+         (block-list-includes? (cdr lst1) (cdr lst2)))))
 
 ;; The algorithm:
 ;; Build blocks from the file, insert list of identical blocks
@@ -107,7 +107,7 @@
 ;;
 ;; Remove single blocks, which means they have no companies in the file.
 ;;
-;; Remove list of blocks which overlaps with other list of blocks and
+;; Remove list of blocks which are included in other list of blocks and
 ;; have a smaller block size.
 
 (define (enumerate-interval low high)
@@ -243,34 +243,34 @@
             #\/))
         #\sp))))
 
-(define (remove-duplicate-entries hash-table)
-  (define (remove-overlaps k1 v1)
+(define (remove-sub-blocks hash-table)
+  (define (remove-includes k1 v1)
     (for-each
       (lambda (x)
         (let* ((k2 (car x))
                (v2 (cdr x))
                (s2 (block-size v2))
                (s1 (block-size v1)))
-          (if (block-list-overlaps? v1 v2)
+          (if (block-list-includes? v1 v2)
             (if (< s2 s1)
               (hash-remove! hash-table k2)))))
       (hash-map->list cons hash-table)))
   ;; prove by contradiction
-  ;; since for each block list, block lists overlaps
-  ;; with it and have a smaller block size is removed.
+  ;; since for each block list, block lists included
+  ;; in it and have a smaller block size is removed.
   ;;
-  ;; if there is such a block that overlaps with other,
+  ;; if there is such a block that is included in other block,
   ;; two cases:
   ;; the other block have a smaller size, then it should be removed already.
   ;; otherwise, the block itself should already be removed.
   (for-each
     (lambda (x)
-      (remove-overlaps (car x) (cdr x)))
+      (remove-includes (car x) (cdr x)))
     (hash-map->list cons hash-table))
   hash-table)
 
 (define (eat-blocks hash-table)
-  (remove-duplicate-entries
+  (remove-sub-blocks
     (remove-single-blocks hash-table)))
 
 (define list-of-blocks
