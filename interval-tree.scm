@@ -72,18 +72,35 @@
   (treap-insert
     hash
     (time-priority)
-    nil
+    1
     nil
     tree
     <
-    identity))
+    hash-update-data))
 
 (define (hash-delete hash tree)
   (treap-delete
     hash
     tree
     <
-    identity))
+    hash-update-data))
+
+(define (hash-update-data tree)
+  (define (tree-data tree)
+    (if (null? tree)
+      0
+      (node-data (tree-node tree))))
+  (treap-update-data
+    tree
+    (lambda (tree left right)
+      (+ (tree-data left)
+         (tree-data right)
+         1))))
+
+(define (hash-size tree)
+  (if (null? tree)
+    0
+    (node-data (tree-node tree))))
 
 ;; search, insert, delete on the interval tree
 
@@ -98,7 +115,16 @@
       (>= data low))))
 
 (define (interval-update-data tree)
-    (treap-update-data tree -inf.0 max))
+  (define (tree-data tree)
+    (if (null? tree)
+      -inf.0
+      (node-data (tree-node tree))))
+  (treap-update-data
+    tree
+    (lambda (tree left right)
+      (max (interval-high (node-key (tree-node tree)))
+           (tree-data left)
+           (tree-data right)))))
 
 (define (interval-search interval tree)
   (if (null? tree)
@@ -305,22 +331,20 @@
             (right (tree-right tree)))
         (let ((k (node-key node)))
           (cond ((key-less? key k)
-                 (make-tree node
-                            (delete key left)
-                            right))
+                 (update-data
+                   (make-tree node
+                              (delete key left)
+                              right)))
                 ((equal? key k)
                  (delete-root tree))
                 (else
-                  (make-tree node
-                             left
-                             (delete key right))))))))
+                  (update-data
+                    (make-tree node
+                               left
+                               (delete key right)))))))))
   (delete key tree))
 
-(define (treap-update-data tree null-data data-proc)
-  (define (tree-data tree)
-    (if (null? tree)
-      null-data
-      (node-data (tree-node tree))))
+(define (treap-update-data tree update-proc)
   (define (update-node-data node data)
     (let ((key (node-key node))
           (priority (node-priority node))
@@ -333,9 +357,9 @@
           (right (tree-right tree)))
       (make-tree
         (update-node-data node
-                          (data-proc (tree-data tree)
-                                     (tree-data left)
-                                     (tree-data right)))
+                          (update-proc tree
+                                       left
+                                       right))
         left
         right))))
 
