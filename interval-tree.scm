@@ -97,28 +97,8 @@
           (low (interval-low interval)))
       (>= data low))))
 
-(define (update-tree-data tree)
-  (define (tree-data tree)
-    (if (null? tree)
-      -inf.0
-      (node-data (tree-node tree))))
-  (define (update-node-data node data)
-    (let ((key (node-key node))
-          (priority (node-priority node))
-          (value (node-value node)))
-      (make-node key priority data value)))
-  (if (null? tree)
-    tree
-    (let ((node (tree-node tree))
-          (left (tree-left tree))
-          (right (tree-right tree)))
-      (make-tree
-        (update-node-data node
-                          (max (tree-data tree)
-                               (tree-data left)
-                               (tree-data right)))
-        left
-        right))))
+(define (interval-update-data tree)
+    (treap-update-data tree -inf.0 max))
 
 (define (interval-search interval tree)
   (if (null? tree)
@@ -162,14 +142,14 @@
     value
     tree
     interval-less?
-    update-tree-data))
+    interval-update-data))
 
 (define (interval-delete interval tree)
   (treap-delete
     interval
     tree
     interval-less?
-    update-tree-data))
+    interval-update-data))
 
 ;; random and time priority
 
@@ -335,6 +315,29 @@
                              left
                              (delete key right))))))))
   (delete key tree))
+
+(define (treap-update-data tree null-data data-proc)
+  (define (tree-data tree)
+    (if (null? tree)
+      null-data
+      (node-data (tree-node tree))))
+  (define (update-node-data node data)
+    (let ((key (node-key node))
+          (priority (node-priority node))
+          (value (node-value node)))
+      (make-node key priority data value)))
+  (if (null? tree)
+    tree
+    (let ((node (tree-node tree))
+          (left (tree-left tree))
+          (right (tree-right tree)))
+      (make-tree
+        (update-node-data node
+                          (data-proc (tree-data tree)
+                                     (tree-data left)
+                                     (tree-data right)))
+        left
+        right))))
 
 (use-modules (ice-9 pretty-print))
 
