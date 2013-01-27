@@ -18,10 +18,17 @@
     (and (<= low1 high2)
          (<= low2 high1))))
 
+;; be clear what less means for compound data keys
+;; keys are distinct, so when low parts of them are the same,
+;; order them by the high parts.
 (define (interval-less? interval1 interval2)
   (let ((low1 (interval-low interval1))
-        (low2 (interval-low interval2)))
-    (< low1 low2)))
+        (low2 (interval-low interval2))
+        (high1 (interval-high interval1))
+        (high2 (interval-high interval2)))
+    (if (= low1 low2)
+      (< high1 high2)
+      (< low1 low2))))
 
 ;; An node is a list
 ;; (key priority data value)
@@ -344,6 +351,8 @@
                                (delete key right)))))))))
   (delete key tree))
 
+;; data in a treap is something depends on the root, left and right.
+;; when any of the three is changed, it should be updated.
 (define (treap-update-data tree update-proc)
   (define (update-node-data node data)
     (let ((key (node-key node))
