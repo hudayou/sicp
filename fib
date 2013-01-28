@@ -82,8 +82,8 @@
       delimiter-string)))
 
 (define (block-interval block)
-  (cons (block-start block)
-        (block-end block)))
+  (make-interval (block-start block)
+                 (block-end block)))
 
 (define (block-includes? block1 block2)
   (or
