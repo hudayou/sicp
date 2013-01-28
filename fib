@@ -160,7 +160,7 @@
         (priority2 (node-priority (tree-node tree2))))
     (< priority1 priority2)))
 
-;; search, insert, delete on the hash tree
+;; ops on the hash tree
 
 (define (hash-search hash tree)
   (if (null? tree)
@@ -186,13 +186,6 @@
     <
     hash-update-data))
 
-(define (hash-delete hash tree)
-  (treap-delete
-    hash
-    tree
-    <
-    hash-update-data))
-
 (define (hash-update-data tree)
   (define (tree-data tree)
     (if (null? tree)
@@ -210,7 +203,7 @@
     0
     (node-data (tree-node tree))))
 
-;; search, insert, delete on the interval tree
+;; ops on the interval tree
 
 (define (node-overlaps-interval? node interval)
   (interval-overlaps? (node-key node) interval))
@@ -233,19 +226,6 @@
       (max (interval-high (node-key (tree-node tree)))
            (tree-data left)
            (tree-data right)))))
-
-(define (interval-search interval tree)
-  (if (null? tree)
-    #f
-    (let ((node (tree-node tree))
-          (left (tree-left tree))
-          (right (tree-right tree)))
-      (cond ((node-overlaps-interval? node interval)
-             (node-value node))
-            ((tree-overlaps-interval? left interval)
-             (interval-search interval left))
-            (else
-              (interval-search interval right))))))
 
 (define (interval-traverse-search interval tree combine init)
   (define (search-to-result tree result)
@@ -277,13 +257,6 @@
     interval-less?
     interval-update-data))
 
-(define (interval-delete interval tree)
-  (treap-delete
-    interval
-    tree
-    interval-less?
-    interval-update-data))
-
 ;; random and time priority
 
 (define (random-priority)
@@ -295,7 +268,7 @@
           (microsecond (cdr time)))
       (- (+ (* second 1000000) microsecond)))))
 
-;; insert and delete on the treap
+;; ops on the treap
 
 (define (treap-insert key priority data value tree key-less? update-data)
   (define (fixup tree)
@@ -392,64 +365,6 @@
                                left
                                (insert key value right)))))))))
   (insert key value tree))
-
-(define (treap-delete key tree key-less? update-data)
-  (define (delete-root tree)
-    (let ((node (tree-node tree))
-          (left (tree-left tree))
-          (right (tree-right tree)))
-      (cond ((and (null? left) (null? right))
-             nil)
-            ((null? left)
-             right)
-            ((null? right)
-             left)
-            (else
-              (let ((left-of-right (tree-left right))
-                    (right-of-right (tree-right right))
-                    (node-of-right (tree-node right))
-                    (left-of-left (tree-left left))
-                    (right-of-left (tree-right left))
-                    (node-of-left (tree-node left)))
-                (if (priority-less? left right)
-                  (update-data
-                    (make-tree
-                      node-of-right
-                      (delete-root
-                        (make-tree
-                          node
-                          left
-                          left-of-right))
-                      right-of-right))
-                  (update-data
-                    (make-tree
-                      node-of-left
-                      left-of-left
-                      (delete-root
-                        (make-tree
-                          node
-                          right-of-left
-                          right))))))))))
-  (define (delete key tree)
-    (if (null? tree)
-      tree
-      (let ((node (tree-node tree))
-            (left (tree-left tree))
-            (right (tree-right tree)))
-        (let ((k (node-key node)))
-          (cond ((key-less? key k)
-                 (update-data
-                   (make-tree node
-                              (delete key left)
-                              right)))
-                ((equal? key k)
-                 (delete-root tree))
-                (else
-                  (update-data
-                    (make-tree node
-                               left
-                               (delete key right)))))))))
-  (delete key tree))
 
 ;; data in a treap is something depends on the root, left and right.
 ;; when any of the three is changed, it should be updated.
