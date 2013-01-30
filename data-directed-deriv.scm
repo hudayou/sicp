@@ -7,7 +7,7 @@
 (define (deriv exp var)
   (cond ((number? exp) 0)
         ((variable? exp) (if (same-variable? exp var) 1 0))
-        (else ((get 'deriv (operator exp)) (operands exp)
+        (else ((get (operator exp) 'deriv) (operands exp)
                                            var))))
 (define (operator exp) (car exp))
 (define (operands exp) (cdr exp))
@@ -30,7 +30,7 @@
   (define (variable? x) (symbol? x))
   (define (same-variable? v1 v2)
     (and (variable? v1) (variable? v2) (eq? v1 v2)))
-  (put 'deriv '+ deriv)
+  (put '+ 'deriv deriv)
   'done)
 
 (define (install-product-package)
@@ -111,7 +111,7 @@
   (define (variable? x) (symbol? x))
   (define (same-variable? v1 v2)
     (and (variable? v1) (variable? v2) (eq? v1 v2)))
-  (put 'deriv '* deriv1)
+  (put '* 'deriv deriv1)
   'done)
 
 (define (install-exponent-package)
@@ -183,7 +183,7 @@
           ((=number? m2 1) m1)
           ((and (number? m1) (number? m2)) (* m1 m2))
           (else (list '* m1 m2))))
-  (put 'deriv '** deriv1)
+  (put '** 'deriv deriv1)
   'done)
 
 (define (variable? x) (symbol? x))
