@@ -160,12 +160,22 @@
     (cons (* r (cos a)) (* r (sin a))))
   ;; interface to the rest of the system
   (define (tag x) (attach-tag 'rectangular x))
+  (define (tag-polar x) (attach-tag 'polar x))
+  (define (tag-complex x) (attach-tag 'complex x))
   (put 'real-part '(rectangular) real-part)
   (put 'imag-part '(rectangular) imag-part)
   (put 'magnitude '(rectangular) magnitude)
   (put 'angle '(rectangular) angle)
   (put 'equ? '(rectangular rectangular)
        (lambda (z1 z2) (equal? z1 z2)))
+  (put 'equ? '(rectangular polar)
+       (lambda (z1 z2) (equ? (make-complex-from-mag-ang (magnitude z1)
+                                                        (angle z1))
+                             (tag-complex (tag-polar z2)))))
+  (put 'equ? '(polar rectangular)
+       (lambda (z1 z2) (equ?  (tag-complex (tag-polar z1))
+                              (make-complex-from-mag-ang (magnitude z2)
+                                                         (angle z2)))))
   (put 'make-from-real-imag 'rectangular
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'rectangular
