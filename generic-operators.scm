@@ -35,6 +35,7 @@
 (define (mul x y) (apply-generic 'mul x y))
 (define (div x y) (apply-generic 'div x y))
 (define (equ? x y) (apply-generic 'equ? x y))
+(define (=zero? x) (apply-generic '=zero? x))
 
 (define (real-part z) (apply-generic 'real-part z))
 (define (imag-part z) (apply-generic 'imag-part z))
@@ -54,6 +55,8 @@
        (lambda (x y) (tag (/ x y))))
   (put 'equ? '(scheme-number scheme-number)
        (lambda (x y) (= x y)))
+  (put '=zero? '(scheme-number)
+       (lambda (x) (zero? x)))
   (put 'make 'scheme-number
        (lambda (x) (tag x)))
   'done)
@@ -94,6 +97,8 @@
        (lambda (x y) (tag (div-rat x y))))
   (put 'equ? '(rational rational)
        (lambda (x y) (equal? x y)))
+  (put '=zero? '(rational)
+       (lambda (x) (zero? (numer x))))
   (put 'make 'rational
        (lambda (n d) (tag (make-rat n d))))
   'done)
@@ -131,6 +136,8 @@
        (lambda (z1 z2) (tag (div-complex z1 z2))))
   (put 'equ? '(complex complex)
        (lambda (z1 z2) (equ? z1 z2)))
+  (put '=zero? '(complex)
+       (lambda (z) (=zero? z)))
   (put 'make-from-real-imag 'complex
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'complex
@@ -168,6 +175,9 @@
   (put 'angle '(rectangular) angle)
   (put 'equ? '(rectangular rectangular)
        (lambda (z1 z2) (equal? z1 z2)))
+  (put '=zero? '(rectangular)
+       (lambda (z) (and (zero? (real-part z))
+                        (zero? (imag-part z)))))
   (put 'equ? '(rectangular polar)
        (lambda (z1 z2) (equ? (make-complex-from-mag-ang (magnitude z1)
                                                         (angle z1))
@@ -202,6 +212,8 @@
   (put 'angle '(polar) angle)
   (put 'equ? '(polar polar)
        (lambda (z1 z2) (equal? z1 z2)))
+  (put '=zero? '(polar)
+       (lambda (z) (zero? (magnitude z))))
   (put 'make-from-real-imag 'polar
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'polar
@@ -224,3 +236,16 @@
 ;; guile> (symbol-pref 'magnitude)
 ;; (((complex) . #<procedure magnitude (z)>) ((rectangular) . #<procedure
 ;; magnitude (z)>) ((polar) . #<procedure magnitude (z)>))
+
+(=zero? 0)
+(=zero? 1)
+(=zero? (make-rational 0 1))
+(=zero? (make-rational 1 1))
+(=zero? (make-complex-from-real-imag 0 0))
+(=zero? (make-complex-from-real-imag 0 1))
+(=zero? (make-complex-from-real-imag 1 0))
+(=zero? (make-complex-from-real-imag 1 1))
+(=zero? (make-complex-from-mag-ang 0 0))
+(=zero? (make-complex-from-mag-ang 0 1))
+(=zero? (make-complex-from-mag-ang 1 0))
+(=zero? (make-complex-from-mag-ang 1 1))
