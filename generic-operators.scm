@@ -34,6 +34,7 @@
 (define (sub x y) (apply-generic 'sub x y))
 (define (mul x y) (apply-generic 'mul x y))
 (define (div x y) (apply-generic 'div x y))
+(define (equ? x y) (apply-generic 'equ? x y))
 
 (define (real-part z) (apply-generic 'real-part z))
 (define (imag-part z) (apply-generic 'imag-part z))
@@ -51,6 +52,8 @@
        (lambda (x y) (tag (* x y))))
   (put 'div '(scheme-number scheme-number)
        (lambda (x y) (tag (/ x y))))
+  (put 'equ? '(scheme-number scheme-number)
+       (lambda (x y) (= x y)))
   (put 'make 'scheme-number
        (lambda (x) (tag x)))
   'done)
@@ -89,6 +92,8 @@
        (lambda (x y) (tag (mul-rat x y))))
   (put 'div '(rational rational)
        (lambda (x y) (tag (div-rat x y))))
+  (put 'equ? '(rational rational)
+       (lambda (x y) (equal? x y)))
   (put 'make 'rational
        (lambda (n d) (tag (make-rat n d))))
   'done)
@@ -124,6 +129,8 @@
        (lambda (z1 z2) (tag (mul-complex z1 z2))))
   (put 'div '(complex complex)
        (lambda (z1 z2) (tag (div-complex z1 z2))))
+  (put 'equ? '(complex complex)
+       (lambda (z1 z2) (equ? z1 z2)))
   (put 'make-from-real-imag 'complex
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'complex
@@ -157,6 +164,8 @@
   (put 'imag-part '(rectangular) imag-part)
   (put 'magnitude '(rectangular) magnitude)
   (put 'angle '(rectangular) angle)
+  (put 'equ? '(rectangular rectangular)
+       (lambda (z1 z2) (equal? z1 z2)))
   (put 'make-from-real-imag 'rectangular
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'rectangular
@@ -181,6 +190,8 @@
   (put 'imag-part '(polar) imag-part)
   (put 'magnitude '(polar) magnitude)
   (put 'angle '(polar) angle)
+  (put 'equ? '(polar polar)
+       (lambda (z1 z2) (equal? z1 z2)))
   (put 'make-from-real-imag 'polar
        (lambda (x y) (tag (make-from-real-imag x y))))
   (put 'make-from-mag-ang 'polar
