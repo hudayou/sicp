@@ -15,15 +15,20 @@
           "no method for these types -- apply-generic"
           (list op type-tags))))))
 
-(define (attach-tag type-tag contents)(cons type-tag contents))
+(define (attach-tag type-tag contents)
+  (if (number? contents)
+    contents
+    (cons type-tag contents)))
 (define (type-tag datum)
-  (if (pair? datum)
-    (car datum)
-    (error "bad tagged datum -- type-tag" datum)))
+  (cond ((number? datum) 'scheme-number)
+        ((pair? datum) (car datum))
+        (else
+          (error "bad tagged datum -- type-tag" datum))))
 (define (contents datum)
-  (if (pair? datum)
-    (cdr datum)
-    (error "bad tagged datum -- contents" datum)))
+  (cond ((number? datum) datum)
+        ((pair? datum) (cdr datum))
+        (else
+          (error "bad tagged datum -- contents" datum))))
 
 (define (add x y) (apply-generic 'add x y))
 (define (sub x y) (apply-generic 'sub x y))
