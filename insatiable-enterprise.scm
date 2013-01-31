@@ -47,6 +47,11 @@
 (define (get-record file employee)
   (get-data-generic 'get-record file employee))
 
+;; How to design generic operations operates on not only typed data?
+;; Furthur structure the args of generic operations.
+;; Make assumption that the car is typed data, cdr is rest of args.
+;; Define what no typed data and no rest of args means.
+
 (define (get-data-generic op . args)
   (let ((type-tags (map type-tag args)))
     (let ((proc (get op type-tags)))
