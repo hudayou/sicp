@@ -187,3 +187,14 @@
 (install-complex-package)
 (install-rational-package)
 (install-scheme-number-package)
+
+;; guile> (trace apply-generic)
+;; (apply-generic)
+;; guile> (magnitude (make-complex-from-real-imag 3 4))
+;; [apply-generic magnitude (complex rectangular 3 . 4)]
+;; [apply-generic magnitude (rectangular 3 . 4)]
+;; 5.0
+;; 5.0
+;; guile> (symbol-pref 'magnitude)
+;; (((complex) . #<procedure magnitude (z)>) ((rectangular) . #<procedure
+;; magnitude (z)>) ((polar) . #<procedure magnitude (z)>))
