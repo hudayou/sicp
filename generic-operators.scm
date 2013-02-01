@@ -126,6 +126,12 @@
                        (- (angle z1) (angle z2))))
   ;; interface to rest of the system
   (define (tag z) (attach-tag 'complex z))
+  ;; to be included in the complex package
+  (define (add-complex-to-schemenum z x)
+    (make-from-real-imag (+ (real-part z) x)
+                         (imag-part z)))
+  (put 'add '(complex scheme-number)
+       (lambda (z x) (tag (add-complex-to-schemenum z x))))
   (put 'add '(complex complex)
        (lambda (z1 z2) (tag (add-complex z1 z2))))
   (put 'sub '(complex complex)
