@@ -255,3 +255,61 @@
 (=zero? (make-complex-from-mag-ang 0 1))
 (=zero? (make-complex-from-mag-ang 1 0))
 (=zero? (make-complex-from-mag-ang 1 1))
+
+;; the design of coercion procedures depends on the structure of the
+;; types, or how you think about the relations between the types.
+
+(define get-coercion symbol-property)
+(define put-coercion set-symbol-property!)
+
+(define (scheme-number->complex n)
+  (make-complex-from-real-imag (contents n) 0))
+
+(put-coercion 'scheme-number 'complex scheme-number->complex)
+
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+        (apply proc (map contents args))
+        (if (= (length args) 2)
+          (let ((type1 (car type-tags))
+                (type2 (cadr type-tags))
+                (a1 (car args))
+                (a2 (cadr args)))
+            (let ((t1->t2 (get-coercion type1 type2))
+                  (t2->t1 (get-coercion type2 type1)))
+              (cond (t1->t2
+                      (apply-generic op (t1->t2 a1) a2))
+                    (t2->t1
+                      (apply-generic op a1 (t2->t1 a2)))
+                    (else
+                      (error "No method for these types"
+                             (list op type-tags))))))
+          (error "No method for these types"
+                 (list op type-tags)))))))
+
+;; traces about coercion
+;; guile> (trace apply-generic)
+;; (apply-generic)
+;; guile> (add (make-complex-from-real-imag 3 4) 4)
+;; [apply-generic add (complex rectangular 3 . 4) 4]
+;; |  [apply-generic real-part (rectangular 3 . 4)]
+;; |  3
+;; |  [apply-generic imag-part (rectangular 3 . 4)]
+;; |  4
+;; (complex rectangular 7 . 4)
+;; (complex rectangular 7 . 4)
+;; guile> (sub (make-complex-from-real-imag 3 4) 4)
+;; [apply-generic sub (complex rectangular 3 . 4) 4]
+;; [apply-generic sub (complex rectangular 3 . 4) (complex rectangular 4 . 0)]
+;; |  [apply-generic real-part (rectangular 3 . 4)]
+;; |  3
+;; |  [apply-generic real-part (rectangular 4 . 0)]
+;; |  4
+;; |  [apply-generic imag-part (rectangular 3 . 4)]
+;; |  4
+;; |  [apply-generic imag-part (rectangular 4 . 0)]
+;; |  0
+;; (complex rectangular -1 . 4)
+;; (complex rectangular -1 . 4)
