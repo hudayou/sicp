@@ -286,14 +286,9 @@
                 (cond (t1->t2
                         (apply-generic op (t1->t2 a1) a2))
                       (t2->t1
-                        (apply-generic op a1 (t2->t1 a2)))
-                      (else
-                        (error "no method for these types"
-                               (list op type-tags)))))
-              (error "no method for these types"
-                     (list op type-tags))))
-          (error "no method for these types"
-                 (list op type-tags)))))))
+                        (apply-generic op a1 (t2->t1 a2)))))))))
+      (error "no method for these types"
+             (list op type-tags)))))
 
 ;; traces about coercion
 ;; guile> (trace apply-generic)
