@@ -53,6 +53,9 @@
        (lambda (x y) (tag (* x y))))
   (put 'div '(scheme-number scheme-number)
        (lambda (x y) (tag (/ x y))))
+  ;; following added to Scheme-number package
+  (put 'exp '(scheme-number scheme-number)
+       (lambda (x y) (tag (expt x y)))) ; using primitive expt
   (put 'equ? '(scheme-number scheme-number)
        (lambda (x y) (= x y)))
   (put '=zero? '(scheme-number)
@@ -277,16 +280,19 @@
                 (type2 (cadr type-tags))
                 (a1 (car args))
                 (a2 (cadr args)))
-            (let ((t1->t2 (get-coercion type1 type2))
-                  (t2->t1 (get-coercion type2 type1)))
-              (cond (t1->t2
-                      (apply-generic op (t1->t2 a1) a2))
-                    (t2->t1
-                      (apply-generic op a1 (t2->t1 a2)))
-                    (else
-                      (error "No method for these types"
-                             (list op type-tags))))))
-          (error "No method for these types"
+            (if (not (eq? type1 type2))
+              (let ((t1->t2 (get-coercion type1 type2))
+                    (t2->t1 (get-coercion type2 type1)))
+                (cond (t1->t2
+                        (apply-generic op (t1->t2 a1) a2))
+                      (t2->t1
+                        (apply-generic op a1 (t2->t1 a2)))
+                      (else
+                        (error "no method for these types"
+                               (list op type-tags)))))
+              (error "no method for these types"
+                     (list op type-tags))))
+          (error "no method for these types"
                  (list op type-tags)))))))
 
 ;; traces about coercion
@@ -313,3 +319,11 @@
 ;; |  0
 ;; (complex rectangular -1 . 4)
 ;; (complex rectangular -1 . 4)
+
+(define (scheme-number->scheme-number n) n)
+(define (complex->complex z) z)
+(put-coercion 'scheme-number 'scheme-number
+              scheme-number->scheme-number)
+(put-coercion 'complex 'complex complex->complex)
+
+(define (exp x y) (apply-generic 'exp x y))
