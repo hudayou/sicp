@@ -322,3 +322,82 @@
 (put-coercion 'complex 'complex complex->complex)
 
 (define (exp x y) (apply-generic 'exp x y))
+
+;; Show how to generalize apply-generic to handle coercion in the general case
+;; of multiple arguments. One strategy is to attempt to coerce all the
+;; arguments to the type of the first argument, then to the type of the second
+;; argument, and so on. Give an example of a situation where this strategy (and
+;; likewise the two-argument version given above) is not sufficiently general.
+;; (Hint: Consider the case where there are some suitable mixed-type operations
+;; present in the table that will not be tried.)
+;;
+;; If there is a type tower, without lose generality, let's assume it's
+;; a number tower.
+;; We have appropriate operations for two complex numbers, if we have two
+;; non complex arguments, then the appropriate operation for complex numbers
+;; will not be tried by using the strategy above.
+
+(define (apply-generic op . args)
+  (define (same-type? type-list)
+    (cond ((null? type-list) #t)
+          ((null? (cdr type-list)) #t)
+          (else
+            (and
+              (eq? (car type-list)
+                   (cadr type-list))
+              (same-type? (cdr type-list))))))
+  (define (coercions-available? coercion-list)
+    (if (null? coercion-list)
+      #t
+      (and (car coercion-list)
+           (coercions-available? (cdr coercion-list)))))
+  (define (get-coercion-list from-args to-arg)
+    (map
+      (lambda (t)
+        (get-coercion (type-tag to-arg) t))
+      (map type-tag from-args)))
+  (define (coercion-args coercion-list args)
+    (map
+      (lambda (c a)
+        (c a))
+      coercion-list
+      args))
+  (define (find-proc-2 op left-args arg right-args)
+    (let ((left-coercion-list (get-coercion-list left-args arg))
+          (right-coercion-list (get-coercion-list right-args arg)))
+      (if (and
+            (coercions-available? left-coercion-list)
+            (coercions-available? right-coercion-list))
+        (find-proc-0 op
+                     (append (coercion-args
+                               left-args)
+                             (cons arg
+                                   (coercion-args
+                                     right-args))))
+        #f)))
+  (define (find-proc-1 op left-args rest-args)
+    (if (null? rest-args)
+      #f
+      (let ((arg (car rest-args))
+            (right-args (cdr rest-args)))
+        (or
+          (find-proc-2 op left-args arg right-args)
+          (find-proc-1 op
+                       (append left-args (list arg))
+                       right-args)))))
+  (define (find-proc-0 op args)
+    (let ((type-tags (map type-tag args)))
+      (let ((proc (get op type-tags)))
+        (if proc
+          proc
+          #f))))
+  (define (find-proc op args)
+    (let ((type-tags (map type-tag args)))
+      (if (same-type? type-tags)
+        (find-proc-0 op args)
+        (find-proc-1 op '() args))))
+  (let ((proc (find-proc op args)))
+    (if proc
+      (apply proc (map contents args))
+      (error "no method for these types"
+             (list op type-tags)))))
