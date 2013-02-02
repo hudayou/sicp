@@ -491,6 +491,12 @@
 
 (put-coercion 'raise 'real raise-real-to-complex)
 
+(put-coercion 'raise
+              'scheme-number
+              (lambda (x)
+                (raise-integer-to-rational
+                  (make-integer x))))
+
 ;; direct dispatch generic raise
 (define (raise x)
   (let ((type (type-tag x)))
@@ -500,10 +506,65 @@
           (else
             (error "do not know how to raise" x)))))
 
+(put-coercion 'level 'integer 0)
+(put-coercion 'level 'rational 1)
+(put-coercion 'level 'real 2)
+(put-coercion 'level 'complex 3)
+(put-coercion 'level 'scheme-number 0)
+
 ;; data directed generic raise
 (define (raise x)
   (let ((type (type-tag x)))
-    (let ((coercion (get-coercion 'raise type)))
-      (if coercion
-        (coercion x)
+    (let ((raiser (get-coercion 'raise type)))
+      (if raiser
+        (raiser x)
         (error "do not know how to raise" x)))))
+
+(define (level x)
+  (let ((type (type-tag x)))
+    (let ((level (get-coercion 'level type)))
+      (if level
+        level
+        (error "do not know level for" x)))))
+
+(define (all-levels)
+  (symbol-pref 'level))
+
+(define (find-highest-level args)
+  (let loop ((highest 0)
+             (args args))
+    (if (null? args)
+      highest
+      (let ((cara (car args))
+            (cdra (cdr args)))
+        (if (< highest (level cara))
+          (loop (level cara) cdra)
+          (loop highest cdra))))))
+(define (successive-raise arg lvl)
+  (let ((current-level (level arg)))
+    (if (= lvl current-level)
+      arg
+      (successive-raise (raise arg) lvl))))
+(define (raise-args args)
+  (let ((l (find-highest-level args)))
+    (map
+      (lambda (a)
+        (successive-raise a l))
+      args)))
+(define (find-proc op args)
+  ;; look up proc without coercion the args
+  (let ((proc (find-proc-0 op args)))
+    (if proc
+      proc
+      (let ((type-tags (map type-tag args)))
+        (if (same-type? type-tags)
+          #f
+          ;; look up proc after coercion the args
+          (find-proc-0 op (raise-args args)))))))
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (find-proc op args)))
+      (if proc
+        (apply (car proc) (map contents (cdr proc)))
+        (error "no method for these types"
+               (list op type-tags))))))
