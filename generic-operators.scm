@@ -476,14 +476,20 @@
 (define (raise-integer-to-rational integer)
   (make-rational (car (contents integer)) 1))
 
+(put-coercion 'raise 'integer raise-integer-to-rational)
+
 (define (raise-rational-to-real rational)
   (let ((rat (contents rational)))
     (let ((n (car rat))
           (d (cdr rat)))
       (make-real (exact->inexact (/ n d))))))
 
+(put-coercion 'raise 'rational raise-rational-to-real)
+
 (define (raise-real-to-complex real)
   (make-complex-from-real-imag (car (contents real)) 0))
+
+(put-coercion 'raise 'real raise-real-to-complex)
 
 ;; direct dispatch generic raise
 (define (raise x)
@@ -493,3 +499,11 @@
           ((eq? type 'real) (raise-real-to-complex x))
           (else
             (error "do not know how to raise" x)))))
+
+;; data directed generic raise
+(define (raise x)
+  (let ((type (type-tag x)))
+    (let ((coercion (get-coercion 'raise type)))
+      (if coercion
+        (coercion x)
+        (error "do not know how to raise" x)))))
