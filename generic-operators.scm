@@ -413,3 +413,83 @@
         (apply (car proc) (map contents (cdr proc)))
         (error "no method for these types"
                (list op type-tags))))))
+
+(define (install-integer-package)
+  (define (tag x)
+    (attach-tag 'integer x))
+  (define (value x)
+    (car x))
+  (put 'add '(integer integer)
+       (lambda (x y) (tag (+ (value x) (value y)))))
+  (put 'sub '(integer integer)
+       (lambda (x y) (tag (- (value x) (value y)))))
+  (put 'mul '(integer integer)
+       (lambda (x y) (tag (* (value x) (value y)))))
+  (put 'div '(integer integer)
+       (lambda (x y) (tag (/ (value x) (value y)))))
+  ;; following added to integer package
+  (put 'exp '(integer integer)
+       ; using primitive expt
+       (lambda (x y) (tag (expt (value x) (value y)))))
+  (put 'equ? '(integer integer)
+       (lambda (x y) (= (value x) (value y))))
+  (put '=zero? '(integer)
+       (lambda (x) (zero? (value x))))
+  (put 'make 'integer
+       (lambda (x) (tag (list x))))
+  'done)
+
+(define (install-real-package)
+  (define (tag x)
+    (attach-tag 'real x))
+  (define (value x)
+    (car x))
+  (put 'add '(real real)
+       (lambda (x y) (tag (+ (value x) (value y)))))
+  (put 'sub '(real real)
+       (lambda (x y) (tag (- (value x) (value y)))))
+  (put 'mul '(real real)
+       (lambda (x y) (tag (* (value x) (value y)))))
+  (put 'div '(real real)
+       (lambda (x y) (tag (/ (value x) (value y)))))
+  ;; following added to real package
+  (put 'exp '(real real)
+       ; using primitive expt
+       (lambda (x y) (tag (expt (value x) (value y)))))
+  (put 'equ? '(real real)
+       (lambda (x y) (= (value x) (value y))))
+  (put '=zero? '(real)
+       (lambda (x) (zero? (value x))))
+  (put 'make 'real
+       (lambda (x) (tag (list x))))
+  'done)
+
+(install-integer-package)
+(install-real-package)
+
+(define (make-real r)
+  ((get 'make 'real) r))
+
+(define (make-integer i)
+  ((get 'make 'integer) i))
+
+(define (raise-integer-to-rational integer)
+  (make-rational (car (contents integer)) 1))
+
+(define (raise-rational-to-real rational)
+  (let ((rat (contents rational)))
+    (let ((n (car rat))
+          (d (cdr rat)))
+      (make-real (exact->inexact (/ n d))))))
+
+(define (raise-real-to-complex real)
+  (make-complex-from-real-imag (car (contents real)) 0))
+
+;; direct dispatch generic raise
+(define (raise x)
+  (let ((type (type-tag x)))
+    (cond ((eq? type 'integer) (raise-integer-to-rational x))
+          ((eq? type 'rational) (raise-rational-to-real x))
+          ((eq? type 'real) (raise-real-to-complex x))
+          (else
+            (error "do not know how to raise" x)))))
