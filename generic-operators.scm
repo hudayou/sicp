@@ -353,6 +353,7 @@
 (define (get-coercion-list from-args to-arg)
   (map
     (lambda (t)
+      ;; get coercion from-type->to-type
       (get-coercion t (type-tag to-arg)))
     (map type-tag from-args)))
 (define (coercion-args coercion-list args)
