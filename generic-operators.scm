@@ -482,18 +482,24 @@
         (make-real (exact->inexact (/ n d)))))
   (define (raise-real-to-complex real)
     (make-complex-from-real-imag (car real) 0))
+  (define (project-rational-to-integer x)
+    (make-integer (car x)))
+  (define (project-real-to-rational x)
+    (make-rational (numerator (inexact->exact (car x)))
+                   (denominator (inexact->exact (car x)))))
+  (define (project-complex-to-real x)
+    (make-real (real-part (attach-tag 'complex x))))
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
   (put 'raise '(real) raise-real-to-complex)
-  (put 'raise
-       '(scheme-number)
-       (lambda (x)
-         (make-rational x 1)))
   (put 'level '(integer) (lambda (x) 0))
   (put 'level '(rational) (lambda (x) 1))
   (put 'level '(real) (lambda (x) 2))
   (put 'level '(complex) (lambda (x) 3))
   (put 'level '(scheme-number) (lambda (x) 0))
+  (put 'project '(rational) project-rational-to-integer)
+  (put 'project '(real) project-real-to-rational)
+  (put 'project '(complex) project-complex-to-real)
   'done)
 
 (install-tower-package)
@@ -503,6 +509,8 @@
   (apply-generic 'raise x))
 (define (level x)
   (apply-generic 'level x))
+(define (project x)
+  (apply-generic 'project x))
 
 (define (find-highest-level args)
   (let loop ((highest 0)
@@ -535,3 +543,29 @@
           #f
           ;; look up proc after coercion the args
           (find-proc-0 op (raise-args args)))))))
+
+(define (drop x)
+  (let loop ((y x)
+             (lvl (level x)))
+    (if (zero? lvl)
+      y
+      (let ((project-y (project y)))
+        (if (equ? (raise project-y) y)
+          (loop project-y (level project-y))
+          y)))))
+
+;; special care needs to be taken in apply-generic to avoid
+;; generic operations interlock themselves
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (find-proc op args)))
+      (if proc
+        (let ((result (apply (car proc) (map contents (cdr proc)))))
+          (if (or (eq? op 'add)
+                  (eq? op 'sub)
+                  (eq? op 'mul)
+                  (eq? op 'div))
+            (drop result)
+            result))
+        (error "no method for these types"
+               (list op type-tags))))))
