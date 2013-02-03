@@ -561,10 +561,3 @@
           #f
           ;; look up proc after coercion the args
           (find-proc-0 op (raise-args args)))))))
-(define (apply-generic op . args)
-  (let ((type-tags (map type-tag args)))
-    (let ((proc (find-proc op args)))
-      (if proc
-        (apply (car proc) (map contents (cdr proc)))
-        (error "no method for these types"
-               (list op type-tags))))))
