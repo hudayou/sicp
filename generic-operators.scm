@@ -473,62 +473,36 @@
 (define (make-integer i)
   ((get 'make 'integer) i))
 
-(define (raise-integer-to-rational integer)
-  (make-rational (car (contents integer)) 1))
+(define (install-tower-package)
+  (define (raise-integer-to-rational integer)
+    (make-rational (car integer) 1))
+  (define (raise-rational-to-real rational)
+      (let ((n (car rational))
+            (d (cdr rational)))
+        (make-real (exact->inexact (/ n d)))))
+  (define (raise-real-to-complex real)
+    (make-complex-from-real-imag (car real) 0))
+  (put 'raise '(integer) raise-integer-to-rational)
+  (put 'raise '(rational) raise-rational-to-real)
+  (put 'raise '(real) raise-real-to-complex)
+  (put 'raise
+       '(scheme-number)
+       (lambda (x)
+         (make-rational x 1)))
+  (put 'level '(integer) (lambda (x) 0))
+  (put 'level '(rational) (lambda (x) 1))
+  (put 'level '(real) (lambda (x) 2))
+  (put 'level '(complex) (lambda (x) 3))
+  (put 'level '(scheme-number) (lambda (x) 0))
+  'done)
 
-(put-coercion 'raise 'integer raise-integer-to-rational)
-
-(define (raise-rational-to-real rational)
-  (let ((rat (contents rational)))
-    (let ((n (car rat))
-          (d (cdr rat)))
-      (make-real (exact->inexact (/ n d))))))
-
-(put-coercion 'raise 'rational raise-rational-to-real)
-
-(define (raise-real-to-complex real)
-  (make-complex-from-real-imag (car (contents real)) 0))
-
-(put-coercion 'raise 'real raise-real-to-complex)
-
-(put-coercion 'raise
-              'scheme-number
-              (lambda (x)
-                (raise-integer-to-rational
-                  (make-integer x))))
-
-;; direct dispatch generic raise
-(define (raise x)
-  (let ((type (type-tag x)))
-    (cond ((eq? type 'integer) (raise-integer-to-rational x))
-          ((eq? type 'rational) (raise-rational-to-real x))
-          ((eq? type 'real) (raise-real-to-complex x))
-          (else
-            (error "do not know how to raise" x)))))
-
-(put-coercion 'level 'integer 0)
-(put-coercion 'level 'rational 1)
-(put-coercion 'level 'real 2)
-(put-coercion 'level 'complex 3)
-(put-coercion 'level 'scheme-number 0)
+(install-tower-package)
 
 ;; data directed generic raise
 (define (raise x)
-  (let ((type (type-tag x)))
-    (let ((raiser (get-coercion 'raise type)))
-      (if raiser
-        (raiser x)
-        (error "do not know how to raise" x)))))
-
+  (apply-generic 'raise x))
 (define (level x)
-  (let ((type (type-tag x)))
-    (let ((level (get-coercion 'level type)))
-      (if level
-        level
-        (error "do not know level for" x)))))
-
-(define (all-levels)
-  (symbol-pref 'level))
+  (apply-generic 'level x))
 
 (define (find-highest-level args)
   (let loop ((highest 0)
