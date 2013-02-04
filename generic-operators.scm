@@ -532,7 +532,7 @@
   (define (raise-real-to-complex real)
     (make-complex-from-real-imag (car real) 0))
   (define (raise-complex-to-polynomial complex)
-    (make-polynomial 'x (list (list 0 complex))))
+    (make-polynomial 'x (list (list 0 (attach-tag 'complex complex)))))
   (define (project-integer-to-number x)
     (make-scheme-number (car x)))
   (define (project-rational-to-integer x)
