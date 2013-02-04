@@ -552,14 +552,14 @@
             cart
             (loop cdrt))))))
   (define (project-polynomial-to-complex x)
-    (if (=zero? (attach-tag 'polynomial x))
-      (make-complex-from-real-imag 0 0)
+    (if (not (=zero? (attach-tag 'polynomial x)))
       (let ((constant-term (find-constant-term x)))
         (if constant-term
           (let ((coefficient (cadr constant-term)))
-            (make-complex-from-real-imag (real-part coefficient)
-                                         (imag-part coefficient)))
-          (make-complex-from-real-imag 0 0)))))
+            (if (not (eq? (type-tag coefficient) 'polynomial))
+              (make-complex-from-real-imag (real-part coefficient)
+                                           (imag-part coefficient)))))))
+    (make-complex-from-real-imag 0 0))
   (put 'raise '(scheme-number) raise-scheme-number-to-integer)
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
@@ -771,14 +771,6 @@
   ((get 'make 'polynomial) var terms))
 
 (use-modules (ice-9 pretty-print))
-
-(define (apply-generic op . args)
-  (let ((type-tags (map type-tag args)))
-    (let ((proc (find-proc op args)))
-      (if proc
-        (apply (car proc) (map contents (cdr proc)))
-        (error "no method for these types"
-               (list op type-tags))))))
 
 (pretty-print
   (mul (make-polynomial 'x (list (list 2 (make-polynomial 'y '((1 1) (0 1))))
