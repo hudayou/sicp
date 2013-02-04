@@ -531,6 +531,8 @@
         (make-real (exact->inexact (/ n d)))))
   (define (raise-real-to-complex real)
     (make-complex-from-real-imag (car real) 0))
+  (define (raise-complex-to-polynomial complex)
+    (make-polynomial 'x (list (list 0 complex))))
   (define (project-integer-to-number x)
     (make-scheme-number (car x)))
   (define (project-rational-to-integer x)
@@ -540,27 +542,48 @@
                    (denominator (inexact->exact (car x)))))
   (define (project-complex-to-real x)
     (make-real (real-part (attach-tag 'complex x))))
+  (define (find-constant-term x)
+    (let loop ((term-list (cdr x)))
+      (if (null? term-list)
+        #f
+        (let ((cart (car term-list))
+              (cdrt (cdr term-list)))
+          (if (zero? (car cart))
+            cart
+            (loop cdrt))))))
+  (define (project-polynomial-to-complex x)
+    (if (=zero? (attach-tag 'polynomial x))
+      (make-complex-from-real-imag 0 0)
+      (let ((constant-term (find-constant-term x)))
+        (if constant-term
+          (let ((coefficient (cadr constant-term)))
+            (make-complex-from-real-imag (real-part coefficient)
+                                         (imag-part coefficient)))
+          (make-complex-from-real-imag 0 0)))))
   (put 'raise '(scheme-number) raise-scheme-number-to-integer)
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
   (put 'raise '(real) raise-real-to-complex)
+  (put 'raise '(complex) raise-complex-to-polynomial)
   (put 'level '(scheme-number) (lambda (x) 0))
   (put 'level '(integer) (lambda (x) 1))
   (put 'level '(rational) (lambda (x) 2))
   (put 'level '(real) (lambda (x) 3))
   (put 'level '(complex) (lambda (x) 4))
+  (put 'level '(polynomial) (lambda (x) 5))
   (put 'project '(rational) project-rational-to-integer)
   (put 'project '(real) project-real-to-rational)
   (put 'project '(complex) project-complex-to-real)
+  (put 'project '(polynomial) project-polynomial-to-complex)
   'done)
-
-(install-tower-package)
 
 ;; data directed generic raise
 (define (raise x)
   (apply-generic 'raise x))
 (define (level x)
   (apply-generic 'level x))
+(define max-level 5)
+(define min-level 0)
 (define (project x)
   (apply-generic 'project x))
 
@@ -591,10 +614,22 @@
     (if proc
       proc
       (let ((type-tags (map type-tag args)))
-        (if (same-type? type-tags)
+        (if (or (and (same-type? type-tags)
+                     (> (length args) 1))
+                (eq? op 'raise))
           #f
           ;; look up proc after coercion the args
-          (find-proc-0 op (raise-args args)))))))
+          (find-proc-1 op (raise-args args)))))))
+(define (find-proc-1 op raised-args)
+  (let ((cara (car raised-args))
+        (cdra (cdr raised-args)))
+    (let ((cara-level (level cara)))
+      (if (= cara-level max-level)
+        (find-proc-0 op raised-args)
+        (let ((proc (find-proc-0 op raised-args)))
+          (if proc
+            proc
+            (find-proc-1 op (raise-args (cons (raise cara) cdra)))))))))
 
 (define (drop x)
   (let loop ((y x)
@@ -621,3 +656,134 @@
             result))
         (error "no method for these types"
                (list op type-tags))))))
+
+(define (install-polynomial-package)
+  ;; internal procedures
+  ;; representation of poly
+  (define (make-poly variable term-list)
+    (cons variable term-list))
+  (define (variable p) (car p))
+  (define (term-list p) (cdr p))
+  (define (variable? x) (symbol? x))
+  (define (same-variable? v1 v2)
+    (and (variable? v1) (variable? v2) (eq? v1 v2)))
+  ;; representation of terms and term lists
+  (define (adjoin-term term term-list)
+    (if (=zero? (coeff term))
+      term-list
+      (cons term term-list)))
+  (define (the-empty-termlist) '())
+  (define (first-term term-list) (car term-list))
+  (define (rest-terms term-list) (cdr term-list))
+  (define (empty-termlist? term-list) (null? term-list))
+  (define (make-term order coeff) (list order coeff))
+  (define (order term) (car term))
+  (define (coeff term) (cadr term))
+  ;; continued on next page
+  (define (add-poly p1 p2)
+    (if (same-variable? (variable p1) (variable p2))
+      (make-poly (variable p1)
+                 (add-terms (term-list p1)
+                            (term-list p2)))
+      (error "polys not in same var -- add-poly"
+             (list p1 p2))))
+  (define (add-terms L1 L2)
+    (cond ((empty-termlist? L1) L2)
+          ((empty-termlist? L2) L1)
+          (else
+            (let ((t1 (first-term L1)) (t2 (first-term L2)))
+              (cond ((> (order t1) (order t2))
+                     (adjoin-term
+                       t1 (add-terms (rest-terms L1) L2)))
+                    ((< (order t1) (order t2))
+                     (adjoin-term
+                       t2 (add-terms L1 (rest-terms L2))))
+                    (else
+                      (adjoin-term
+                        (make-term (order t1)
+                                   (add (coeff t1) (coeff t2)))
+                        (add-terms (rest-terms L1)
+                                   (rest-terms L2)))))))))
+  (define (mul-poly p1 p2)
+    (if (same-variable? (variable p1) (variable p2))
+      (make-poly (variable p1)
+                 (mul-terms (term-list p1)
+                            (term-list p2)))
+      (error "polys not in same var -- mul-poly"
+             (list p1 p2))))
+  (define (mul-terms L1 L2)
+    (if (empty-termlist? L1)
+      (the-empty-termlist)
+      (add-terms (mul-term-by-all-terms (first-term L1) L2)
+                 (mul-terms (rest-terms L1) L2))))
+  (define (mul-term-by-all-terms t1 L)
+    (if (empty-termlist? L)
+      (the-empty-termlist)
+      (let ((t2 (first-term L)))
+        (adjoin-term
+          (make-term (+ (order t1) (order t2))
+                     (mul (coeff t1) (coeff t2)))
+          (mul-term-by-all-terms t1 (rest-terms L))))))
+  ;; interface to rest of the system
+  (define (tag p) (attach-tag 'polynomial p))
+  (put 'add '(polynomial polynomial)
+       (lambda (p1 p2) (tag (add-poly p1 p2))))
+  (put 'mul '(polynomial polynomial)
+       (lambda (p1 p2) (tag (mul-poly p1 p2))))
+  (put '=zero? '(polynomial)
+       (lambda (p)
+         (let loop ((term-list (term-list p)))
+           (if (null? term-list)
+             #t
+             (let ((cart (car term-list))
+                   (cdrt (cdr term-list)))
+               (and (=zero? (coeff cart))
+                    (loop cdrt)))))))
+  (put 'equ? '(polynomial polynomial)
+       (lambda (p1 p2)
+         (let ((variable-of-p1 (variable p1))
+               (variable-of-p2 (variable p2)))
+           (and (eq? variable-of-p1 variable-of-p2)
+                (let loop ((term-list-of-p1 (term-list p1))
+                           (term-list-of-p2 (term-list p2)))
+                  (if (and (null? term-list-of-p1)
+                           (null? term-list-of-p2))
+                    #t
+                    (and (= (length term-list-of-p1)
+                            (length term-list-of-p2))
+                         (let ((cart-of-p1 (car term-list-of-p1))
+                               (cdrt-of-p1 (cdr term-list-of-p1))
+                               (cart-of-p2 (car term-list-of-p2))
+                               (cdrt-of-p2 (cdr term-list-of-p2)))
+                           (and (= (order cart-of-p1)
+                                   (order cart-of-p2))
+                                (equ? (coeff cart-of-p1)
+                                      (coeff cart-of-p2))
+                                (loop (cdrt-of-p1 cdrt-of-p2)))))))))))
+  (put 'make 'polynomial
+       (lambda (var terms) (tag (make-poly var terms))))
+  'done)
+
+(install-polynomial-package)
+(install-tower-package)
+
+(define (make-polynomial var terms)
+  ((get 'make 'polynomial) var terms))
+
+(use-modules (ice-9 pretty-print))
+
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (find-proc op args)))
+      (if proc
+        (apply (car proc) (map contents (cdr proc)))
+        (error "no method for these types"
+               (list op type-tags))))))
+
+(pretty-print
+  (mul (make-polynomial 'x (list (list 2 (make-polynomial 'y '((1 1) (0 1))))
+                                 (list 1 (make-polynomial 'y '((2  1) (0 1))))
+                                 (list 0 (make-polynomial 'y '((1 1) (0 -1))))))
+       (make-polynomial 'x (list (list 1 (make-polynomial 'y '((1 1) (0 -2))))
+                                 (list 0 (make-polynomial 'y '((3 1) (0 7))))))))
+
