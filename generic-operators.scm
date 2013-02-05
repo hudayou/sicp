@@ -772,10 +772,15 @@
 
 (use-modules (ice-9 pretty-print))
 
-(pretty-print
-  (mul (make-polynomial 'x (list (list 2 (make-polynomial 'y '((1 1) (0 1))))
-                                 (list 1 (make-polynomial 'y '((2  1) (0 1))))
-                                 (list 0 (make-polynomial 'y '((1 1) (0 -1))))))
-       (make-polynomial 'x (list (list 1 (make-polynomial 'y '((1 1) (0 -2))))
-                                 (list 0 (make-polynomial 'y '((3 1) (0 7))))))))
+(define poly1
+  (make-polynomial 'x (list (list 2 (make-polynomial 'y '((1 1) (0 1))))
+                            (list 1 (make-polynomial 'y '((2  1) (0 1))))
+                            (list 0 (make-polynomial 'y '((1 1) (0 -1)))))))
 
+(define poly2
+  (make-polynomial 'x (list (list 1 (make-polynomial 'y '((1 1) (0 -2))))
+                            (list 0 (make-polynomial 'y '((3 1) (0 7)))))))
+
+
+(pretty-print
+  (mul poly1 poly2))
