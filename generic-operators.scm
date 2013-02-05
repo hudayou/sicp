@@ -690,6 +690,7 @@
   (define (rest-terms term-list) (cdr term-list))
   (define (empty-termlist? term-list) (null? term-list))
   (define (make-term order coeff) (list order coeff))
+  (define (make-term-list terms) terms)
   (define (order term) (car term))
   (define (coeff term) (cadr term))
   ;; continued on next page
@@ -793,6 +794,10 @@
                                 (loop (rest-of-p1 rest-of-p2)))))))))))
   (put 'make 'polynomial
        (lambda (var terms) (tag (make-poly var terms))))
+  (put 'make 'term
+       (lambda (order coeff) (make-term order coeff)))
+  (put 'make 'term-list
+       (lambda (terms) (make-term-list terms)))
   'done)
 
 (install-polynomial-package)
@@ -801,16 +806,41 @@
 (define (make-polynomial var terms)
   ((get 'make 'polynomial) var terms))
 
+(define (make-term order coeff)
+  ((get 'make 'term) order coeff))
+
+(define (make-term-list . terms)
+  ((get 'make 'term-list) terms))
+
 (use-modules (ice-9 pretty-print))
 
 (define poly1
-  (make-polynomial 'x (list (list 2 (make-polynomial 'y '((1 1) (0 1))))
-                            (list 1 (make-polynomial 'y '((2  1) (0 1))))
-                            (list 0 (make-polynomial 'y '((1 1) (0 -1)))))))
+  (make-polynomial
+    'x
+    (make-term-list (make-term 2 (make-polynomial
+                                   'y
+                                   (make-term-list (make-term 1 1)
+                                                   (make-term 0 1))))
+                    (make-term 1 (make-polynomial
+                                   'y
+                                   (make-term-list (make-term 2 1)
+                                                   (make-term 0 1))))
+                    (make-term 0 (make-polynomial
+                                   'y
+                                   (make-term-list (make-term 1 1)
+                                                   (make-term 0 -1)))))))
 
 (define poly2
-  (make-polynomial 'x (list (list 1 (make-polynomial 'y '((1 1) (0 -2))))
-                            (list 0 (make-polynomial 'y '((3 1) (0 7)))))))
+  (make-polynomial
+    'x
+    (make-term-list (make-term 1 (make-polynomial
+                                   'y
+                                   (make-term-list (make-term 1 1)
+                                                   (make-term 0 -2))))
+                    (make-term 0 (make-polynomial
+                                   'y
+                                   (make-term-list (make-term 3 1)
+                                                   (make-term 0 7)))))))
 
 
 (pretty-print
