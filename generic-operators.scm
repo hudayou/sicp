@@ -800,6 +800,34 @@
        (lambda (terms) (make-term-list terms)))
   'done)
 
+;; ;; representation of terms and term lists
+;; ;; dense representation of term list
+;; (define (adjoin-term term term-list)
+;;   (if (=zero? (coeff term))
+;;     term-list
+;;     (let loop ((i (length term-list))
+;;                (term-list term-list))
+;;       (cond ((= i (order term)) (cons (coeff term) term-list))
+;;             ((> i (order term)) (error "bad usage of adjoin-term"
+;;                                        (list term term-list)))
+;;             (else
+;;               (loop (+ i 1) (cons 0 term-list)))))))
+;; (define (the-empty-termlist) '())
+;; (define (first-term term-list)
+;;   (make-term
+;;     (length (cdr term-list))
+;;     (car term-list)))
+;; (define (rest-terms term-list) (cdr term-list))
+;; (define (empty-termlist? term-list) (null? term-list))
+;; (define (make-term order coeff) (list order coeff))
+;; (define (make-term-list terms)
+;;   (if (null? terms)
+;;     (the-empty-termlist)
+;;     (adjoin-term (car terms)
+;;                  (make-term-list (cdr terms)))))
+;; (define (order term) (car term))
+;; (define (coeff term) (cadr term))
+
 (install-polynomial-package)
 (install-tower-package)
 
