@@ -599,6 +599,7 @@
 (define min-level 0)
 (define (project x)
   (apply-generic 'project x))
+(put 'raise 'not-raisable #t)
 
 (define (find-highest-level args)
   (let loop ((highest 0)
@@ -629,7 +630,7 @@
       (let ((type-tags (map type-tag args)))
         (if (or (and (same-type? type-tags)
                      (> (length args) 1))
-                (eq? op 'raise))
+                (get op 'not-raisable))
           #f
           ;; look up proc after coercion the args
           (find-proc-1 op (raise-args args)))))))
