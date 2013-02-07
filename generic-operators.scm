@@ -654,6 +654,11 @@
           (loop project-y (level project-y))
           y)))))
 
+(put 'add 'drop #t)
+(put 'sub 'drop #t)
+(put 'mul 'drop #t)
+(put 'div 'drop #t)
+
 ;; special care needs to be taken in apply-generic to avoid
 ;; generic operations interlock themselves
 (define (apply-generic op . args)
@@ -661,10 +666,7 @@
     (let ((proc (find-proc op args)))
       (if proc
         (let ((result (apply (car proc) (map contents (cdr proc)))))
-          (if (or (eq? op 'add)
-                  (eq? op 'sub)
-                  (eq? op 'mul)
-                  (eq? op 'div))
+          (if (get op 'drop)
             (drop result)
             result))
         (error "no method for these types"
