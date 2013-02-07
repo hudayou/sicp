@@ -477,7 +477,7 @@
 
 (define (install-integer-package)
   (define (tag x)
-    (attach-tag 'integer x))
+    (attach-tag 'integer (list x)))
   (define (value x)
     (car x))
   (put 'add '(integer integer)
@@ -508,12 +508,12 @@
   (put '=zero? '(integer)
        (lambda (x) (zero? (value x))))
   (put 'make 'integer
-       (lambda (x) (tag (list x))))
+       (lambda (x) (tag x)))
   'done)
 
 (define (install-real-package)
   (define (tag x)
-    (attach-tag 'real x))
+    (attach-tag 'real (list x)))
   (define (value x)
     (car x))
   (put 'add '(real real)
@@ -544,7 +544,7 @@
   (put '=zero? '(real)
        (lambda (x) (zero? (value x))))
   (put 'make 'real
-       (lambda (x) (tag (list x))))
+       (lambda (x) (tag x)))
   'done)
 
 (install-integer-package)
