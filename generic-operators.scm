@@ -64,10 +64,14 @@
        (lambda (x y) (tag (* x y))))
   (put 'div '(scheme-number scheme-number)
        (lambda (x y) (tag (/ x y))))
-  (put 'sqrtz '(scheme-number) sqrt)
-  (put 'atanz '(scheme-number scheme-number) atan)
-  (put 'cosz '(scheme-number) cos)
-  (put 'sinz '(scheme-number) sin)
+  (put 'sqrtz '(scheme-number)
+       (lambda (x) (tag (sqrt x))))
+  (put 'atanz '(scheme-number scheme-number)
+       (lambda (x) (tag (atan x))))
+  (put 'cosz '(scheme-number)
+       (lambda (x) (tag (cos x))))
+  (put 'sinz '(scheme-number)
+       (lambda (x) (tag (sin x))))
   ;; following added to Scheme-number package
   (put 'exp '(scheme-number scheme-number)
        (lambda (x y) (tag (expt x y)))) ; using primitive expt
@@ -120,13 +124,25 @@
   (put 'equ? '(rational rational)
        (lambda (x y) (equal? x y)))
   (put 'sqrtz '(rational)
-       (lambda (x) (sqrt (value x))))
+       (lambda (x) (tag
+                     (make-rat
+                       (numerator (sqrt (value x)))
+                       (denominator (sqrt (value x)))))))
   (put 'atanz '(rational rational)
-       (lambda (x y) (atan (value x) (value y))))
+       (lambda (x) (tag
+                     (make-rat
+                       (numerator (atan (value x)))
+                       (denominator (atan (value x)))))))
   (put 'cosz '(rational)
-       (lambda (x) (cos (value x))))
+       (lambda (x) (tag
+                     (make-rat
+                       (numerator (cos (value x)))
+                       (denominator (cos (value x)))))))
   (put 'sinz '(rational)
-       (lambda (x) (sin (value x))))
+       (lambda (x) (tag
+                     (make-rat
+                       (numerator (sin (value x)))
+                       (denominator (sin (value x)))))))
   (put '=zero? '(rational)
        (lambda (x) (zero? (numer x))))
   (put 'make 'rational
@@ -476,13 +492,13 @@
   (put 'div '(integer integer)
        (lambda (x y) (tag (/ (value x) (value y)))))
   (put 'sqrtz '(integer)
-       (lambda (x) (sqrt (value x))))
+       (lambda (x) (tag (sqrt (value x)))))
   (put 'atanz '(integer integer)
-       (lambda (x y) (atan (value x) (value y))))
+       (lambda (x y) (tag (atan (value x) (value y)))))
   (put 'cosz '(integer)
-       (lambda (x) (cos (value x))))
+       (lambda (x) (tag (cos (value x)))))
   (put 'sinz '(integer)
-       (lambda (x) (sin (value x))))
+       (lambda (x) (tag (sin (value x)))))
   ;; following added to integer package
   (put 'exp '(integer integer)
        ; using primitive expt
@@ -512,13 +528,13 @@
   (put 'div '(real real)
        (lambda (x y) (tag (/ (value x) (value y)))))
   (put 'sqrtz '(real)
-       (lambda (x) (sqrt (value x))))
+       (lambda (x) (tag (sqrt (value x)))))
   (put 'atanz '(real real)
-       (lambda (x y) (atan (value x) (value y))))
+       (lambda (x y) (tag (atan (value x) (value y)))))
   (put 'cosz '(real)
-       (lambda (x) (cos (value x))))
+       (lambda (x) (tag (cos (value x)))))
   (put 'sinz '(real)
-       (lambda (x) (sin (value x))))
+       (lambda (x) (tag (sin (value x)))))
   ;; following added to real package
   (put 'exp '(real real)
        ; using primitive expt
@@ -570,7 +586,7 @@
   (define (project-complex-to-real x)
     (make-real (real-part (attach-tag 'complex x))))
   (define (project-polynomial-to-complex x)
-      (value (attach-tag 'polynomial x)))
+    (value (attach-tag 'polynomial x)))
   (put 'raise '(scheme-number) raise-scheme-number-to-integer)
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
