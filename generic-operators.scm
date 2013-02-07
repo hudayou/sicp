@@ -582,6 +582,7 @@
   (put 'level '(real) (lambda (x) 3))
   (put 'level '(complex) (lambda (x) 4))
   (put 'level '(polynomial) (lambda (x) 5))
+  (put 'project '(integer) project-integer-to-number)
   (put 'project '(rational) project-rational-to-integer)
   (put 'project '(real) project-real-to-rational)
   (put 'project '(complex) project-complex-to-real)
