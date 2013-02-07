@@ -206,7 +206,7 @@
   (define (make-from-real-imag x y) (cons x y))
   (define (magnitude z)
     (sqrtz (add (square (real-part z))
-             (square (imag-part z)))))
+                (square (imag-part z)))))
   (define (angle z)
     (atanz (imag-part z) (real-part z)))
   (define (make-from-mag-ang r a)
@@ -548,7 +548,7 @@
     (make-rational (numerator (value (attach-tag 'integer x)))
                    (denominator (value (attach-tag 'integer x)))))
   (define (raise-rational-to-real x)
-        (make-real (value (attach-tag 'rational x))))
+    (make-real (value (attach-tag 'rational x))))
   (define (raise-real-to-complex x)
     (make-complex-from-real-imag
       (value (attach-tag 'real x))
@@ -559,7 +559,7 @@
       (make-term-list
         (make-term
           0
-          (value (attach-tag 'complex x))))))
+          (attach-tag 'complex x)))))
   (define (project-integer-to-number x)
     (make-scheme-number (value (attach-tag 'integer x))))
   (define (project-rational-to-integer x)
@@ -570,9 +570,7 @@
   (define (project-complex-to-real x)
     (make-real (real-part (attach-tag 'complex x))))
   (define (project-polynomial-to-complex x)
-    (make-complex-from-real-imag
-      (real-part (value (attach-tag 'polynomial x)))
-      (imag-part (value (attach-tag 'polynomial x)))))
+      (value (attach-tag 'polynomial x)))
   (put 'raise '(scheme-number) raise-scheme-number-to-integer)
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
@@ -755,24 +753,27 @@
           (make-term (order first)
                      (neg (coeff first)))
           (neg-terms rest)))))
-  (define (find-constant-term x)
-    (let loop ((term-list (cdr x)))
-      (if (null? term-list)
+  (define (find-constant-term p)
+    (let loop ((term-list (term-list p)))
+      (if (empty-termlist? term-list)
         #f
-        (let ((cart (car term-list))
-              (cdrt (cdr term-list)))
-          (if (zero? (car cart))
-            cart
-            (loop cdrt))))))
-  (define (value x)
-    (if (not (=zero? (attach-tag 'polynomial x)))
-      (let ((constant-term (find-constant-term x)))
-        (if constant-term
-          (let ((coefficient (cadr constant-term)))
-            (if (not (eq? (type-tag coefficient) 'polynomial))
-              (make-complex-from-real-imag (real-part coefficient)
-                                           (imag-part coefficient)))))))
-    (make-complex-from-real-imag 0 0))
+        (let ((first (first-term term-list))
+              (rest (rest-terms term-list)))
+          (if (zero? (order first))
+            first
+            (loop rest))))))
+  (define (value p)
+    (let ((real 0)
+          (imag 0))
+      (if (not (=zero? (attach-tag 'polynomial p)))
+        (let ((const-term (find-constant-term p)))
+          (if const-term
+            (let ((coeff (coeff const-term)))
+              (if (not (eq? (type-tag coeff) 'polynomial))
+                (begin
+                  (set! real (real-part coeff))
+                  (set! imag (imag-part coeff))))))))
+      (make-complex-from-real-imag real imag)))
   ;; interface to rest of the system
   (define (tag p) (attach-tag 'polynomial p))
   (put 'add '(polynomial polynomial)
