@@ -423,31 +423,31 @@
       (c a))
     coercion-list
     args))
-(define (find-proc-2 op left-args arg right-args)
-  (let ((left-coercion-list (get-coercion-list left-args arg))
-        (right-coercion-list (get-coercion-list right-args arg)))
-    (if (and
-          (coercions-available? left-coercion-list)
-          (coercions-available? right-coercion-list))
-      (find-proc-0 op
-                   (append (coercion-args
-                             left-coercion-list
-                             left-args)
-                           (cons arg
-                                 (coercion-args
-                                   right-coercion-list
-                                   right-args))))
-      #f)))
-(define (find-proc-1 op left-args rest-args)
-  (if (null? rest-args)
-    #f
-    (let ((arg (car rest-args))
-          (right-args (cdr rest-args)))
-      (or
-        (find-proc-2 op left-args arg right-args)
-        (find-proc-1 op
-                     (append left-args (list arg))
-                     right-args)))))
+;; (define (find-proc-2 op left-args arg right-args)
+;;   (let ((left-coercion-list (get-coercion-list left-args arg))
+;;         (right-coercion-list (get-coercion-list right-args arg)))
+;;     (if (and
+;;           (coercions-available? left-coercion-list)
+;;           (coercions-available? right-coercion-list))
+;;       (find-proc-0 op
+;;                    (append (coercion-args
+;;                              left-coercion-list
+;;                              left-args)
+;;                            (cons arg
+;;                                  (coercion-args
+;;                                    right-coercion-list
+;;                                    right-args))))
+;;       #f)))
+;; (define (find-proc-1 op left-args rest-args)
+;;   (if (null? rest-args)
+;;     #f
+;;     (let ((arg (car rest-args))
+;;           (right-args (cdr rest-args)))
+;;       (or
+;;         (find-proc-2 op left-args arg right-args)
+;;         (find-proc-1 op
+;;                      (append left-args (list arg))
+;;                      right-args)))))
 (define (find-proc-0 op args)
   ;; lookup proc in the operation-and-type table
   ;; retun proc and args if it is found
@@ -457,23 +457,23 @@
       (if proc
         (cons proc args)
         #f))))
-(define (find-proc op args)
-  ;; look up proc without coercion the args
-  (let ((proc (find-proc-0 op args)))
-    (if proc
-      proc
-      (let ((type-tags (map type-tag args)))
-        (if (same-type? type-tags)
-          #f
-          ;; look up proc after coercion the args
-          (find-proc-1 op '() args))))))
-(define (apply-generic op . args)
-  (let ((type-tags (map type-tag args)))
-    (let ((proc (find-proc op args)))
-      (if proc
-        (apply (car proc) (map contents (cdr proc)))
-        (error "no method for these types"
-               (list op type-tags))))))
+;; (define (find-proc op args)
+;;   ;; look up proc without coercion the args
+;;   (let ((proc (find-proc-0 op args)))
+;;     (if proc
+;;       proc
+;;       (let ((type-tags (map type-tag args)))
+;;         (if (same-type? type-tags)
+;;           #f
+;;           ;; look up proc after coercion the args
+;;           (find-proc-1 op '() args))))))
+;; (define (apply-generic op . args)
+;;   (let ((type-tags (map type-tag args)))
+;;     (let ((proc (find-proc op args)))
+;;       (if proc
+;;         (apply (car proc) (map contents (cdr proc)))
+;;         (error "no method for these types"
+;;                (list op type-tags))))))
 
 (define (install-integer-package)
   (define (tag x)
