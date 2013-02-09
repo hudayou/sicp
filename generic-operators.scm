@@ -702,6 +702,7 @@
   (define (make-term order coeff) (list order coeff))
   (define (order term) (car term))
   (define (coeff term) (cadr term))
+  (define (the-empty-termlist) '())
   ;; continued on next page
   (define (add-poly p1 p2)
     (cond ((=zero? (tag p1)) p2)
@@ -757,7 +758,7 @@
                (neg-terms (term-list p))))
   (define (neg-terms L)
     (if (empty-termlist? L)
-      L
+      (the-empty-termlist)
       (let ((first (first-term L))
             (rest (rest-terms L)))
         (adjoin-term
@@ -831,6 +832,7 @@
   (put 'make-term 'polynomial make-term)
   (put 'order 'polynomial order)
   (put 'coeff 'polynomial coeff)
+  (put 'the-empty-termlist 'polynomial the-empty-termlist)
   (put 'make-dense-term-list 'polynomial
        (lambda (terms)
          ((get 'make-term-list 'dense) terms)))
@@ -888,7 +890,7 @@
   (define (empty-termlist? term-list) (null? term-list))
   (define (make-term-list terms)
     (if (null? terms)
-      terms
+      (the-empty-termlist)
       (adjoin-term (car terms)
                    (make-term-list (cdr terms)))))
   (put 'adjoin-term '(dense dense)
@@ -917,6 +919,9 @@
 
 (define (coeff term)
   ((get 'coeff 'polynomial) term))
+
+(define (the-empty-termlist)
+  ((get 'the-empty-termlist 'polynomial)))
 
 (define (make-dense-term-list . terms)
   ((get 'make-dense-term-list 'polynomial) terms))
