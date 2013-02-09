@@ -615,6 +615,7 @@
 (define (project x)
   (apply-generic 'project x))
 (put 'raise 'not-raisable #t)
+(put 'level 'not-raisable #t)
 
 (define (find-highest-level args)
   (let loop ((highest 0)
@@ -670,10 +671,10 @@
           (loop project-y (level project-y))
           y)))))
 
-(put 'add 'drop #t)
-(put 'sub 'drop #t)
-(put 'mul 'drop #t)
-(put 'div 'drop #t)
+(put 'add 'drop #f)
+(put 'sub 'drop #f)
+(put 'mul 'drop #f)
+(put 'div 'drop #f)
 
 ;; special care needs to be taken in apply-generic to avoid
 ;; generic operations interlock themselves
@@ -751,14 +752,54 @@
           (make-term (+ (order t1) (order t2))
                      (mul (coeff t1) (coeff t2)))
           (mul-term-by-all-terms t1 (rest-terms L))))))
+  (define (div-poly p1 p2)
+    (if (same-variable? (variable p1) (variable p2))
+      (let ((result
+              (div-terms (term-list p1)
+                         (term-list p2))))
+        (list
+          (make-poly (variable p1)
+                     (car result))
+          (make-poly (variable p1)
+                     (cadr result))))
+      (error "polys not in same var -- mul-poly"
+             (list p1 p2))))
+  (define (div-terms L1 L2)
+    (if (empty-termlist? L1)
+      (list L1 L1)
+      (let ((t1 (first-term L1))
+            (t2 (first-term L2)))
+        (if (> (order t2) (order t1))
+          (list (attach-tag (type-tag L1) (the-empty-termlist)) L1)
+          (let ((new-c (div (coeff t1) (coeff t2)))
+                (new-o (- (order t1) (order t2))))
+            (let ((rest-of-result
+                    (div-terms
+                      (sub-terms
+                        L1
+                        (mul-term-by-all-terms (make-term new-o new-c)
+                                               L2))
+                      L2)
+                    ))
+              (list (adjoin-term (make-term new-o new-c)
+                                 (car rest-of-result))
+                    (cadr rest-of-result))
+              ))))))
   (define (sub-poly p1 p2)
-    (add-poly p1 (neg-poly p2)))
+    (if (same-variable? (variable p1) (variable p2))
+      (make-poly (variable p1)
+                 (sub-terms (term-list p1)
+                            (term-list p2)))
+      (error "polys not in same var -- mul-poly"
+             (list p1 p2))))
+  (define (sub-terms L1 L2)
+    (add-terms L1 (neg-terms L2)))
   (define (neg-poly p)
     (make-poly (variable p)
                (neg-terms (term-list p))))
   (define (neg-terms L)
     (if (empty-termlist? L)
-      (the-empty-termlist)
+      L
       (let ((first (first-term L))
             (rest (rest-terms L)))
         (adjoin-term
@@ -797,6 +838,9 @@
   (put 'value '(polynomial) value)
   (put 'mul '(polynomial polynomial)
        (lambda (p1 p2) (tag (mul-poly p1 p2))))
+  (put 'div '(polynomial polynomial)
+       (lambda (p1 p2) (list (tag (car (div-poly p1 p2)))
+                             (tag (cadr (div-poly p1 p2))))))
   (put '=zero? '(polynomial)
        (lambda (p)
          (let loop ((term-list (term-list p)))
@@ -951,31 +995,49 @@
 (define poly1
   (make-polynomial
     'x
-    (make-sparse-term-list (make-term 2 (make-polynomial
-                                   'y
-                                   (make-sparse-term-list (make-term 1 1)
-                                                   (make-term 0 1))))
-                    (make-term 1 (make-polynomial
-                                   'y
-                                   (make-sparse-term-list (make-term 2 1)
-                                                   (make-term 0 1))))
-                    (make-term 0 (make-polynomial
-                                   'y
-                                   (make-sparse-term-list (make-term 1 1)
-                                                   (make-term 0 -1)))))))
+    (make-sparse-term-list
+      (make-term 2 (make-polynomial
+                     'y
+                     (make-sparse-term-list (make-term 1 1)
+                                            (make-term 0 1))))
+      (make-term 1 (make-polynomial
+                     'y
+                     (make-sparse-term-list (make-term 2 1)
+                                            (make-term 0 1))))
+      (make-term 0 (make-polynomial
+                     'y
+                     (make-sparse-term-list (make-term 1 1)
+                                            (make-term 0 -1)))))))
 
 (define poly2
   (make-polynomial
     'x
-    (make-sparse-term-list (make-term 1 (make-polynomial
-                                   'y
-                                   (make-sparse-term-list (make-term 1 1)
-                                                   (make-term 0 -2))))
-                    (make-term 0 (make-polynomial
-                                   'y
-                                   (make-sparse-term-list (make-term 3 1)
-                                                   (make-term 0 7)))))))
+    (make-sparse-term-list
+      (make-term 1 (make-polynomial
+                     'y
+                     (make-sparse-term-list (make-term 1 1)
+                                            (make-term 0 -2))))
+      (make-term 0 (make-polynomial
+                     'y
+                     (make-sparse-term-list (make-term 3 1)
+                                            (make-term 0 7)))))))
 
+(define poly3
+  (make-polynomial
+    'x
+    (make-sparse-term-list
+      (make-term 5 1)
+      (make-term 0 -1))))
+
+(define poly4
+  (make-polynomial
+    'x
+    (make-sparse-term-list
+      (make-term 2 1)
+      (make-term 0 -1))))
 
 (pretty-print
   (mul poly1 poly2))
+
+(pretty-print
+  (div poly3 poly4))
