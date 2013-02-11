@@ -1099,6 +1099,18 @@
 ;; (1 (y 3))
 ;; (7)
 
+;; ((1 (y 1) (x 2))
+;;  (1 (y 0) (x 2))
+;;  (1 (y 2) (x 1))
+;;  (1 (y 0) (x 1))
+;;  (1 (y 1) (x 0))
+;;  (-1 (y 0) (x 0)))
+;;
+;; ((1 (y 1) (x 1))
+;;  (-2 (y 0) (x 1))
+;;  (1 (y 3) (x 0))
+;;  (7 (y 0) (x 0)))
+
 (define (install-polynomial-package)
   ;; internal procedures
   ;; representation of poly
@@ -1145,10 +1157,15 @@
   (define (expand-term variable t)
     (let ((order-t (order t))
           (coeff-t (coeff t)))
-      (if (polynomial? coeff-t)
-        (adjoin-var (make-var variable order-t) (expand coeff-t))
-        (make-expanded-term-list
-          (make-expanded-term coeff-t (make-var variable order-t))))))
+      (if (zero? order-t)
+        (if (polynomial? coeff-t)
+          (expand coeff-t)
+          (make-expanded-term-list
+            (make-expanded-term coeff-t)))
+        (if (polynomial? coeff-t)
+          (adjoin-var (make-var variable order-t) (expand coeff-t))
+          (make-expanded-term-list
+            (make-expanded-term coeff-t (make-var variable order-t)))))))
   (define (adjoin-var var expanded-term-list)
     (if (null? expanded-term-list)
       expanded-term-list
@@ -1400,6 +1417,20 @@
     (make-term-list
       (make-term 2 1)
       (make-term 0 -1))))
+
+(define poly7
+  (make-polynomial
+    'u
+    (make-term-list (make-term 3 poly1)
+                    (make-term 2 poly3)
+                    (make-term 1 poly5)
+                    (make-term 0 poly6))))
+
+(define poly8
+  (make-polynomial
+    'v
+    (make-term-list (make-term 1 poly2)
+                    (make-term 0 poly4))))
 
 (pretty-print
   (mul poly1 poly2))
