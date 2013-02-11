@@ -1127,6 +1127,13 @@
     (cons coeff var-list))
   (define (make-var var order)
     (list var order))
+  (define (order-var var)
+    (cond ((eq? var 'x) 5)
+          ((eq? var 'y) 4)
+          ((eq? var 'z) 3)
+          ((eq? var 'u) 2)
+          ((eq? var 'v) 1)
+          ((eq? var 'w) 0)))
   ;; representation of terms and term lists
   (define (adjoin-term term term-list)
     (if (=zero? (coeff term))
@@ -1174,12 +1181,23 @@
     (cond ((=zero? (tag p1)) p2)
           ((=zero? (tag p2)) p1)
           (else
-            (if (same-variable? (variable p1) (variable p2))
-              (make-poly (variable p1)
-                         (add-terms (term-list p1)
-                                    (term-list p2)))
-              (error "polys not in same var -- add-poly"
-                     (list p1 p2))))))
+            (let ((v1 (variable p1))
+                  (v2 (variable p2)))
+              (if (same-variable? v1 v2)
+                (make-poly (variable p1)
+                           (add-terms (term-list p1)
+                                      (term-list p2)))
+                (let ((o1 (order-var v1))
+                      (o2 (order-var v2)))
+                  (if (< o1 o2)
+                    (make-poly
+                      v2
+                      (add-terms (term-list (remake-poly p1 v2))
+                                 (term-list p2)))
+                    (make-poly
+                      v1
+                      (add-terms (term-list p1)
+                                 (term-list (remake-poly p2 v1)))))))))))
   (define (add-terms L1 L2)
     (cond ((empty-termlist? L1) L2)
           ((empty-termlist? L2) L1)
@@ -1198,12 +1216,23 @@
                         (add-terms (rest-terms L1)
                                    (rest-terms L2)))))))))
   (define (mul-poly p1 p2)
-    (if (same-variable? (variable p1) (variable p2))
-      (make-poly (variable p1)
-                 (mul-terms (term-list p1)
-                            (term-list p2)))
-      (error "polys not in same var -- mul-poly"
-             (list p1 p2))))
+    (let ((v1 (variable p1))
+          (v2 (variable p2)))
+      (if (same-variable? v1 v2)
+        (make-poly (variable p1)
+                   (mul-terms (term-list p1)
+                              (term-list p2)))
+        (let ((o1 (order-var v1))
+              (o2 (order-var v2)))
+          (if (< o1 o2)
+            (make-poly
+              v2
+              (mul-terms (term-list (remake-poly p1 v2))
+                         (term-list p2)))
+            (make-poly
+              v1
+              (mul-terms (term-list p1)
+                         (term-list (remake-poly p2 v1)))))))))
   (define (mul-terms L1 L2)
     (if (empty-termlist? L1)
       (the-empty-termlist)
