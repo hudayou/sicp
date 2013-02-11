@@ -1127,6 +1127,10 @@
     (cons coeff var-list))
   (define (make-var var order)
     (list var order))
+  (define (v var)
+    (car var))
+  (define (o var)
+    (cadr var))
   (define (order-var var)
     (cond ((eq? var 'x) 5)
           ((eq? var 'y) 4)
@@ -1152,6 +1156,43 @@
     (if (same-variable? (variable p) dominant)
       p
       (rearrange-poly (expand-poly p) dominant)))
+  (define (rearrange-poly expanded-term-list dominant)
+    (make-poly dominant
+               (combine-same-order-terms
+                 (sort-terms
+                   (map
+                     (lambda (et)
+                       (expanded-term->term et dominant))
+                     expanded-term-list)))))
+  (define (expanded-term->term expanded-term dominant)
+    (let ((d-coeff (car expanded-term))
+          (d-order (get-dominant-order expanded-term dominant)))
+      (make-term d-order
+                 (var-list->coeff
+                   d-coeff
+                   (sort-var-list
+                     (remove-dominant-var-and-coeff expanded-term
+                                                    dominant))))))
+  (define (var-list->coeff d-coeff var-list)
+    (if (null? var-list)
+      d-coeff
+      (var-list->polynomial d-coeff var-list)))
+  (define (var-list->polynomial d-coeff var-list)
+    (define (loop vlist p)
+      (if (null? vlist)
+        p
+        (let ((carv (car vlist))
+              (cdrv (cdr vlist)))
+          (loop cdrv
+                (make-polynomial (v carv)
+                                 (list
+                                   (make-term (o carv) p)))))))
+    (let ((carv (car var-list))
+          (cdrv (cdr var-list)))
+      (let ((p (make-polynomial (v carv)
+                                (list
+                                  (make-term (o carv) d-coeff)))))
+        (loop cdrv p))))
   (define (expand-poly p)
     (expand-terms (variable p) (term-list p)))
   (define (expand-terms variable L)
