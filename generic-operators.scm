@@ -1173,6 +1173,55 @@
                    (sort-var-list
                      (remove-dominant-var-and-coeff expanded-term
                                                     dominant))))))
+  (define (remove-dominant-var-and-coeff expanded-term dominant)
+    (let ((var-list (cdr expanded-term)))
+      (car (get-dominant-and-other var-list dominant))))
+  (define (get-dominant-order expanded-term dominant)
+    (let ((var-list (cdr expanded-term)))
+      (let ((d-var (cadr (get-dominant-and-other var-list dominant))))
+        (if (null? d-var)
+          0
+          (o d-var)))))
+  (define (get-dominant-and-other var-list dominant)
+    (let loop ((other '())
+               (d '())
+               (var-list var-list))
+        (cond ((null? var-list) (list other d))
+              ((eq? (v (car var-list)) dominant) (loop other
+                                                       (car var-list)
+                                                       (cdr var-list)))
+              (else
+                (loop (append other (list (car var-list)))
+                      d
+                      (cdr var-list))))))
+  (define (sort-var-list var-list)
+    (stable-sort var-list
+                 (lambda (a-var b-var)
+                  (< (order-var (v a-var))
+                     (order-var (v b-var))))))
+  (define (sort-terms term-list)
+    (stable-sort term-list
+                 (lambda (a-term b-term)
+                   (< (order a-term)
+                      (order b-term)))))
+  (define (combine-same-order-terms term-list)
+    (define (combine result term-list)
+      (cond ((null? term-list) result)
+            ((null? result) (combine (cons (car term-list) result)
+                                     (cdr term-list)))
+            ((= (order (car result))
+                (order (car term-list)))
+             (combine (cons (make-term (order (car result))
+                                       (add (coeff (car result))
+                                            (coeff (car term-list))))
+                            (cdr result))
+                      (cdr term-list)))
+            (else
+              (combine (cons (car term-list) result)
+                       (cdr term-list)))))
+    (display term-list)
+    (newline)
+    (combine '() term-list))
   (define (var-list->coeff d-coeff var-list)
     (if (null? var-list)
       d-coeff
@@ -1409,6 +1458,7 @@
   (put 'make 'polynomial
        (lambda (var terms) (tag (make-poly var terms))))
   (put 'expand '(polynomial) expand-poly)
+  (put 'rearrange 'polynomial rearrange-poly)
   (put 'make 'term
        (lambda (order coeff) (make-term order coeff)))
   (put 'make 'term-list
@@ -1429,6 +1479,9 @@
 
 (define (expand p)
   (apply-generic 'expand p))
+
+(define (rearrange ep d)
+  ((get 'rearrange 'polynomial) ep d))
 
 (use-modules (ice-9 pretty-print))
 
