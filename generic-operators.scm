@@ -575,7 +575,8 @@
       (make-term-list
         (make-term
           0
-          (attach-tag 'complex x)))))
+          (drop
+            (attach-tag 'complex x))))))
   (define (project-integer-to-number x)
     (make-scheme-number (value (attach-tag 'integer x))))
   (define (project-rational-to-integer x)
@@ -1152,27 +1153,58 @@
   (define (order term) (car term))
   (define (coeff term) (cadr term))
   ;; continued on next page
-  (define (remake-poly p dominant)
-    (if (same-variable? (variable p) dominant)
-      p
-      (rearrange-poly (expand-poly p) dominant)))
-  (define (rearrange-poly expanded-term-list dominant)
+  (define (remake-poly p dominant common)
+    (rearrange-poly (expand-poly p) dominant common))
+  (define (rearrange-poly expanded-term-list dominant common)
     (make-poly dominant
                (combine-same-order-terms
                  (sort-terms
                    (map
                      (lambda (et)
-                       (expanded-term->term et dominant))
+                       (expanded-term->term et dominant common))
                      expanded-term-list)))))
-  (define (expanded-term->term expanded-term dominant)
+  (define (expanded-term->term expanded-term dominant common)
     (let ((d-coeff (car expanded-term))
           (d-order (get-dominant-order expanded-term dominant)))
       (make-term d-order
                  (var-list->coeff
                    d-coeff
                    (sort-var-list
-                     (remove-dominant-var-and-coeff expanded-term
-                                                    dominant))))))
+                     (generalize-var-list
+                       (remove-dominant-var-and-coeff expanded-term
+                                                      dominant)
+                       common))))))
+  (define (generalize-var-list var-list common)
+    (let ((base (map v var-list)))
+      (let loop ((var-list var-list)
+                 (common common))
+        (if (null? common)
+          var-list
+          (let ((carc (car common))
+                (cdrc (cdr common)))
+            (if (memq carc base)
+              (loop var-list cdrc)
+              (loop (cons (make-var carc 0)
+                          var-list)
+                    cdrc)))))))
+  (define (find-common-vars poly1 poly2)
+    (let ((expanded-poly-1 (expand-poly poly1))
+          (expanded-poly-2 (expand-poly poly2)))
+      (let ((list-of-var-list-1 (map cdr expanded-poly-1))
+            (list-of-var-list-2 (map cdr expanded-poly-2)))
+        (rip-vars list-of-var-list-1
+                  (rip-vars list-of-var-list-2 '())))))
+  (define (rip-vars list-of-var-list init)
+    (let ((vars init))
+      (for-each
+        (lambda (var-list)
+          (for-each
+            (lambda (var)
+              (if (not (memq (v var) vars))
+                (set! vars (cons (v var) vars))))
+            var-list))
+        list-of-var-list)
+      vars))
   (define (remove-dominant-var-and-coeff expanded-term dominant)
     (let ((var-list (cdr expanded-term)))
       (car (get-dominant-and-other var-list dominant))))
@@ -1186,19 +1218,19 @@
     (let loop ((other '())
                (d '())
                (var-list var-list))
-        (cond ((null? var-list) (list other d))
-              ((eq? (v (car var-list)) dominant) (loop other
-                                                       (car var-list)
-                                                       (cdr var-list)))
-              (else
-                (loop (append other (list (car var-list)))
-                      d
-                      (cdr var-list))))))
+      (cond ((null? var-list) (list other d))
+            ((eq? (v (car var-list)) dominant) (loop other
+                                                     (car var-list)
+                                                     (cdr var-list)))
+            (else
+              (loop (append other (list (car var-list)))
+                    d
+                    (cdr var-list))))))
   (define (sort-var-list var-list)
     (stable-sort var-list
                  (lambda (a-var b-var)
-                  (< (order-var (v a-var))
-                     (order-var (v b-var))))))
+                   (< (order-var (v a-var))
+                      (order-var (v b-var))))))
   (define (sort-terms term-list)
     (stable-sort term-list
                  (lambda (a-term b-term)
@@ -1219,8 +1251,6 @@
             (else
               (combine (cons (car term-list) result)
                        (cdr term-list)))))
-    (display term-list)
-    (newline)
     (combine '() term-list))
   (define (var-list->coeff d-coeff var-list)
     (if (null? var-list)
@@ -1278,16 +1308,22 @@
                            (add-terms (term-list p1)
                                       (term-list p2)))
                 (let ((o1 (order-var v1))
-                      (o2 (order-var v2)))
+                      (o2 (order-var v2))
+                      (common (find-common-vars p1 p2)))
                   (if (< o1 o2)
                     (make-poly
                       v2
-                      (add-terms (term-list (remake-poly p1 v2))
-                                 (term-list p2)))
+                      (add-terms (term-list
+                                   (remake-poly p1 v2 (delq v2 common)))
+                                 (term-list
+                                   (remake-poly p2 v2 (delq v2 common)))))
                     (make-poly
                       v1
-                      (add-terms (term-list p1)
-                                 (term-list (remake-poly p2 v1)))))))))))
+                      (add-terms (term-list
+                                   (remake-poly p1 v1 (delq v1 common)))
+                                 (term-list
+                                   (remake-poly
+                                     p2 v1 (delq v1 common))))))))))))
   (define (add-terms L1 L2)
     (cond ((empty-termlist? L1) L2)
           ((empty-termlist? L2) L1)
@@ -1313,16 +1349,22 @@
                    (mul-terms (term-list p1)
                               (term-list p2)))
         (let ((o1 (order-var v1))
-              (o2 (order-var v2)))
+              (o2 (order-var v2))
+              (common (find-common-vars p1 p2)))
           (if (< o1 o2)
             (make-poly
               v2
-              (mul-terms (term-list (remake-poly p1 v2))
-                         (term-list p2)))
+              (mul-terms (term-list
+                           (remake-poly p1 v2 (delq v2 common)))
+                         (term-list
+                           (remake-poly p2 v2 (delq v2 common)))))
             (make-poly
               v1
-              (mul-terms (term-list p1)
-                         (term-list (remake-poly p2 v1)))))))))
+              (mul-terms (term-list
+                           (remake-poly p1 v1 (delq v1 common)))
+                         (term-list
+                           (remake-poly
+                             p2 v1 (delq v1 common))))))))))
   (define (mul-terms L1 L2)
     (if (empty-termlist? L1)
       (the-empty-termlist)
@@ -1459,6 +1501,7 @@
        (lambda (var terms) (tag (make-poly var terms))))
   (put 'expand '(polynomial) expand-poly)
   (put 'rearrange 'polynomial rearrange-poly)
+  (put 'find-common-vars '(polynomial polynomial) find-common-vars)
   (put 'make 'term
        (lambda (order coeff) (make-term order coeff)))
   (put 'make 'term-list
@@ -1480,8 +1523,11 @@
 (define (expand p)
   (apply-generic 'expand p))
 
-(define (rearrange ep d)
-  ((get 'rearrange 'polynomial) ep d))
+(define (find-common-vars p1 p2)
+  (apply-generic 'find-common-vars p1 p2))
+
+(define (rearrange ep d c)
+  ((get 'rearrange 'polynomial) ep d c))
 
 (use-modules (ice-9 pretty-print))
 
