@@ -587,7 +587,7 @@
   (define (project-complex-to-real x)
     (make-real (real-part (attach-tag 'complex x))))
   (define (project-polynomial-to-complex x)
-    (value (attach-tag 'polynomial x)))
+    (drop (value (attach-tag 'polynomial x))))
   (put 'raise '(scheme-number) raise-scheme-number-to-integer)
   (put 'raise '(integer) raise-integer-to-rational)
   (put 'raise '(rational) raise-rational-to-real)
