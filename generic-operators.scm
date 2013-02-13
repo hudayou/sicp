@@ -1138,7 +1138,9 @@
           ((eq? var 'z) 3)
           ((eq? var 'u) 2)
           ((eq? var 'v) 1)
-          ((eq? var 'w) 0)))
+          ((eq? var 'w) 0)
+          (else
+            (random:uniform))))
   ;; representation of terms and term lists
   (define (adjoin-term term term-list)
     (if (=zero? (coeff term))
