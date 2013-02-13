@@ -1412,12 +1412,7 @@
                     (cadr rest-of-result))
               ))))))
   (define (sub-poly p1 p2)
-    (if (same-variable? (variable p1) (variable p2))
-      (make-poly (variable p1)
-                 (sub-terms (term-list p1)
-                            (term-list p2)))
-      (error "polys not in same var -- mul-poly"
-             (list p1 p2))))
+    (add-poly p1 (neg-poly p2)))
   (define (sub-terms L1 L2)
     (add-terms L1 (neg-terms L2)))
   (define (neg-poly p)
