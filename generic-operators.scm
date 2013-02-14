@@ -1155,6 +1155,24 @@
   (define (order term) (car term))
   (define (coeff term) (cadr term))
   ;; continued on next page
+  (define (simplify-poly p)
+    (let ((terms (term-list p)))
+      (if (empty-termlist? (rest-terms terms))
+        (let ((first-order (order (first-term terms)))
+              (first-coeff (coeff (first-term terms))))
+          (if (zero? first-order)
+            (if (polynomial? first-coeff)
+              (simplify first-coeff)
+              first-coeff)
+            (tag p)))
+        (make-polynomial (variable p)
+                         (map simplify-term terms)))))
+  (define (simplify-term term)
+    (let ((order (order term))
+          (coeff (coeff term)))
+      (if (polynomial? coeff)
+        (make-term order (simplify coeff))
+        term)))
   (define (remake-poly p dominant common)
     (rearrange-poly (expand-poly p) dominant common))
   (define (rearrange-poly expanded-term-list dominant common)
@@ -1497,6 +1515,7 @@
   (put 'make 'polynomial
        (lambda (var terms) (tag (make-poly var terms))))
   (put 'expand '(polynomial) expand-poly)
+  (put 'simplify '(polynomial) simplify-poly)
   (put 'rearrange 'polynomial rearrange-poly)
   (put 'find-common-vars '(polynomial polynomial) find-common-vars)
   (put 'make 'term
@@ -1519,6 +1538,9 @@
 
 (define (expand p)
   (apply-generic 'expand p))
+
+(define (simplify p)
+  (apply-generic 'simplify p))
 
 (define (find-common-vars p1 p2)
   (apply-generic 'find-common-vars p1 p2))
