@@ -1456,10 +1456,29 @@
           (neg-terms rest)))))
   (define (gcd-terms a b)
     (if (empty-termlist? b)
-      a
-      (gcd-terms b (remainder-terms a b))))
+      (remove-gcd a)
+      ;;(gcd-terms b (remainder-terms a b))))
+      (gcd-terms b (pseudoremainder-terms a b))))
+  (define (remove-gcd L)
+    (if (empty-termlist? L)
+      L
+      (let ((gcd-c (apply gcd (map coeff L))))
+        (map
+          (lambda (t)
+            (make-term (order t)
+                       (/ (coeff t) gcd-c)))
+          L))))
   (define (remainder-terms a b)
     (cadr (div-terms a b)))
+  (define (pseudoremainder-terms a b)
+    (let ((first-a (first-term a))
+          (first-b (first-term b)))
+      (let ((order-a (order first-a))
+            (order-b (order first-b))
+            (coeff-b (coeff first-b)))
+        (let ((factor (expt coeff-b (+ order-a (- order-b) 1))))
+          (cadr (div-terms (mul-term-by-all-terms (make-term 0 factor)
+                                                  a) b))))))
   (define (gcd-poly p1 p2)
     (if (same-variable? (variable p1) (variable p2))
       (make-poly (variable p1)
@@ -1649,14 +1668,45 @@
 (pretty-print
   (div poly3 poly4))
 
-(define p1 (make-polynomial 'x '((2 1)(0 1))))
-(define p2 (make-polynomial 'x '((3 1)(0 1))))
+(define p1 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 2 1)
+                              (make-term 0 1))))
+(define p2 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 3 1)
+                              (make-term 0 1))))
 (define rf (make-rational p2 p1))
 
 (pretty-print rf)
 
 (pretty-print (add rf rf))
 
-(define p1 (make-polynomial 'x '((4 1) (3 -1) (2 -2) (1 2))))
-(define p2 (make-polynomial 'x '((3 1) (1 -1))))
+(define p1 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 4 1)
+                              (make-term 3 -1)
+                              (make-term 2 -2)
+                              (make-term 1 2))))
+(define p2 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 3 1)
+                              (make-term 1 -1))))
 (pretty-print (greatest-common-divisor p1 p2))
+
+(define p1 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 2 1)
+                              (make-term 1 -2)
+                              (make-term 0 1))))
+(define p2 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 2 11)
+                              (make-term 0 7))))
+(define p3 (make-polynomial 'x
+                            (make-term-list
+                              (make-term 1 13)
+                              (make-term 0 5))))
+(define q1 (mul p1 p2))
+(define q2 (mul p1 p3))
+(pretty-print (greatest-common-divisor q1 q2))
