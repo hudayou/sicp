@@ -21,7 +21,7 @@
 (s 100)
 (s 'how-many-calls?)
 
-(define (make-account balance saved-password)
+(define (make-account balance account-password)
   (define (withdraw amount)
     (if (>= balance amount)
       (begin (set! balance (- balance amount))
@@ -30,16 +30,19 @@
   (define (deposit amount)
     (set! balance (+ balance amount))
     balance)
+  (define (joint joint-password)
+    (make-dispatch joint-password 0))
   (define (call-the-cops)
     (lambda (m)
       "dial 911"))
-  (let ((counter 0))
-    (define (dispatch password m)
-      (if (equal? password saved-password)
+  (define (make-dispatch dispatch-password counter)
+    (lambda (password m)
+      (if (eq? password dispatch-password)
         (begin
           (set! counter 0)
           (cond ((eq? m 'withdraw) withdraw)
                 ((eq? m 'deposit) deposit)
+                ((eq? m 'joint) joint)
                 (else (error "unknown request -- make-account"
                              m))))
         (begin
@@ -47,8 +50,8 @@
           (if (> counter 7)
             (call-the-cops)
             (lambda (m)
-              "incorrect password")))))
-    dispatch))
+              "incorrect password"))))))
+  (make-dispatch account-password 0))
 
 (define acc (make-account 100 'secret-password))
 (display ((acc 'secret-password 'withdraw) 40))
@@ -62,3 +65,7 @@
       (begin
         ((acc 'some-other-password 'deposit) 50)
         (loop (+ i 1))))))
+(define (make-joint account account-password joint-password)
+  ((account account-password 'joint) joint-password))
+(define peter-acc (make-account 100 'open-sesame ))
+(define paul-acc (make-joint peter-acc 'open-sesame 'rosebud))
