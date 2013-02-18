@@ -69,3 +69,18 @@
   ((account account-password 'joint) joint-password))
 (define peter-acc (make-account 100 'open-sesame ))
 (define paul-acc (make-joint peter-acc 'open-sesame 'rosebud))
+
+;; exercise 3.9
+;; iterative version has one extra frame for factorial
+;; each frame in iterative version has three variable bindings
+;; instead of one variable binding in recursive version.
+;;
+;; exercise 3.10
+;; with a let in between, one extra frame with initial-amount binds to 100
+;; is created when W1 and W2 is defined.
+;; when (W1 50) is applied, only the frame contains bindings for balance
+;; to 100 is altered.
+;;
+;; exercise 3.10
+;; local state of acc is saved in the frame of applying make-account.
+;; global env is shared between acc and acc2.
