@@ -61,3 +61,18 @@ z2
 (set-to-wow! z2)
 (eq? (car z1) (cdr z1))
 (eq? (car z2) (cdr z2))
+
+;;  Ben Bitdiddle's pair counter
+(define (count-pairs x)
+  (if (not (pair? x))
+    0
+    (+ (count-pairs (car x))
+       (count-pairs (cdr x))
+       1)))
+(define three-pairs '(a b c))
+(define a (list 'a))
+(define a (cons 'a 'a))
+(define four-pairs (list a a))
+(define b (cons a a))
+(define seven-pairs (cons b b))
+(define inf-pairs (make-cycle '(a b c)))
