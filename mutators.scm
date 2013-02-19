@@ -25,14 +25,6 @@ w
   (set-cdr! (last-pair x) x)
   x)
 
-(define (circular-list? x)
-  (define (circle? x y)
-    (cond ((null? (cdr x)) #f)
-          ((memq (cdr x) y) #t)
-          (else
-            (circle? (cdr x) (cons (cdr x) y)))))
-  (circle? x (cons x '())))
-
 (define z (make-cycle (list 'a 'b 'c)))
 
 (define (mystery x)
@@ -99,3 +91,26 @@ z2
 
 (define c (list 1 2 3 4))
 (set-cdr! (last-pair c) (cddr c))
+
+(define (circle? x y)
+  (cond ((null? (cdr x)) #f)
+        ((memq (cdr x) y) #t)
+        (else
+          (circle? (cdr x) (cons (cdr x) y)))))
+(define (circular-list? x)
+  (circle? x (cons x '())))
+
+(define (circular-list? x)
+  (cond ((not (pair? x)) #f)
+        ((not (pair? (cdr x))) #f)
+        (else
+          (circle? (cons (cdr x) (cddr x))))))
+(define (circle? x)
+  (cond ((eq? (car x) (cdr x)) #t)
+        ((null? (cdr (car x))) #f)
+        ((null? (cdr (cdr x))) #f)
+        ((null? (cddr (cdr x))) #f)
+        (else
+            (set-car! x (cdr (car x)))
+            (set-cdr! x (cddr (cdr x)))
+            (circle? x))))
