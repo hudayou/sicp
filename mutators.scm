@@ -107,10 +107,13 @@ z2
           (circle? (cons (cdr x) (cddr x))))))
 (define (circle? x)
   (cond ((eq? (car x) (cdr x)) #t)
-        ((null? (cdr (car x))) #f)
-        ((null? (cdr (cdr x))) #f)
-        ((null? (cddr (cdr x))) #f)
+        ((null? (cdar x)) #f)
+        ((null? (cddr x)) #f)
+        ((null? (cdddr x)) #f)
         (else
-            (set-car! x (cdr (car x)))
-            (set-cdr! x (cddr (cdr x)))
+            (set-car! x (cdar x))
+            (set-cdr! x (cdddr x))
             (circle? x))))
+
+(define o '(o))
+(set-cdr! o o)
