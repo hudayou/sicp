@@ -28,10 +28,10 @@ w
 (define (circular-list? x)
   (define (circle? x y)
     (cond ((null? (cdr x)) #f)
-          ((eq? (cdr x) y) #t)
+          ((memq (cdr x) y) #t)
           (else
-            (circle? (cdr x) y))))
-  (circle? x x))
+            (circle? (cdr x) (cons (cdr x) y)))))
+  (circle? x (cons x '())))
 
 (define z (make-cycle (list 'a 'b 'c)))
 
@@ -96,3 +96,6 @@ z2
                   (cons (+ car-count cdr-count 1)
                         cdr-pairs)))))))))
   (count x '()))
+
+(define c (list 1 2 3 4))
+(set-cdr! (last-pair c) (cddr c))
