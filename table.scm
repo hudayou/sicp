@@ -63,6 +63,18 @@
     (define (insert! value key . extra-keys)
       (insert-keys! (cons key extra-keys) value local-table)
       'ok)
+    ;; lookup car of keys in table,
+    ;; if cdr of keys is #nil and a record is found,
+    ;; set the cdr of the record to value;
+    ;; if cdr of keys is #nil and a record is not found,
+    ;; set the table to be new backboned key value record and the cdr
+    ;; of the table;
+    ;; if cdr of keys is not #nil and a record is found,
+    ;; insert the cdr of keys to record;
+    ;; if cdr of keys is not #nil and a record is not found,
+    ;; insert the cdr of keys and value to newly created table
+    ;; (cons (car keys) '())
+    ;; and attach it with cdr of the table.
     (define (insert-keys! keys value table)
       (let ((record (assoc (car keys) (cdr table))))
         (if (null? (cdr keys))
