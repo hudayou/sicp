@@ -1,11 +1,10 @@
-(define false #f)
 (define (lookup key table)
   (let ((record (assoc key (cdr table))))
     (if record
       (cdr record)
-      false)))
+      #f)))
 (define (assoc key records)
-  (cond ((null? records) false)
+  (cond ((null? records) #f)
         ((equal? key (caar records)) (car records))
         (else (assoc key (cdr records)))))
 (define (insert! key value table)
@@ -23,8 +22,8 @@
       (let ((record (assoc key-2 (cdr subtable))))
         (if record
           (cdr record)
-          false))
-      false)))
+          #f))
+      #f)))
 (define (insert! key-1 key-2 value table)
   (let ((subtable (assoc key-1 (cdr table))))
     (if subtable
@@ -45,31 +44,40 @@
 (define (make-table same-key?)
   (let ((local-table (list '*table*)))
     (define (assoc key records)
-      (cond ((null? records) false)
+      (cond ((not (pair? records)) #f)
             ((same-key? key (caar records)) (car records))
             (else (assoc key (cdr records)))))
-    (define (lookup key-1 key-2)
-      (let ((subtable (assoc key-1 (cdr local-table))))
-        (if subtable
-          (let ((record (assoc key-2 (cdr subtable))))
-            (if record
-              (cdr record)
-              false))
-          false)))
-    (define (insert! key-1 key-2 value)
-      (let ((subtable (assoc key-1 (cdr local-table))))
-        (if subtable
-          (let ((record (assoc key-2 (cdr subtable))))
-            (if record
-              (set-cdr! record value)
-              (set-cdr! subtable
-                        (cons (cons key-2 value)
-                              (cdr subtable)))))
-          (set-cdr! local-table
-                    (cons (list key-1
-                                (cons key-2 value))
-                          (cdr local-table)))))
+    (define (lookup key . extra-keys)
+      (lookup-keys (cons key extra-keys) local-table))
+    ;; lookup car of keys in local-table, if a record is found,
+    ;; and if cdr of keys is not #nil, lookup cdr of keys in cdr of the record.
+    ;; if cdr of key is #nil, return cdr of the record.
+    ;; if no record is found return #f.
+    (define (lookup-keys keys table)
+      (let ((record (assoc (car keys) (cdr table))))
+        (if record
+          (if (null? (cdr keys))
+            (cdr record)
+            (lookup-keys (cdr keys) record))
+          #f)))
+    (define (insert! value key . extra-keys)
+      (insert-keys! (cons key extra-keys) value local-table)
       'ok)
+    (define (insert-keys! keys value table)
+      (let ((record (assoc (car keys) (cdr table))))
+        (if (null? (cdr keys))
+          (if record
+            (set-cdr! record value)
+            (set-cdr! table
+                      (cons (cons (car keys) value) (cdr table))))
+          (if record
+            (insert-keys! (cdr keys) value record)
+            (set-cdr! table
+                      (cons (insert-keys! (cdr keys)
+                                          value
+                                          (cons (car keys) '()))
+                            (cdr table))))))
+      table)
     (define (dispatch m)
       (cond ((eq? m 'lookup-proc) lookup)
             ((eq? m 'insert-proc!) insert!)
