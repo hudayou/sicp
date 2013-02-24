@@ -68,3 +68,41 @@
     (inverter o2 i2)
     (and-gate i1 i2 a)
     (inverter a output)))
+;; for half-adder,
+;; the delay to get the s is:
+;; (+ (max (+ and-gate-delay inverter-delay)
+;;         or-gate-delay)
+;;    and-gate-delay)
+;; the delay to get the c is:
+;; and-gate-delay
+;;
+;; for full-adder,
+;; the delay to get the s is:
+;; (* 2 half-adder-s-delay)
+;; the delay to get the c is:
+;; (+ half-adder-s-delay half-adder-c-delay or-gate-delay)
+;;
+;; for ripple-carry-adder,
+;; the delay to get the c-n is:
+;; (* (- n 1) full-adder-c-delay)
+;; the delay to get the s-n is:
+;; (+ c-n-1 full-adder-s-delay)
+(define (ripple-carry-adder list-a list-b list-s c)
+  (if (null? (cdr list-a))
+    (let ((c-in (make-wire)))
+      (set-signal! c-in 0)
+      (full-adder (car list-a)
+                  (car list-b)
+                  c-in
+                  (car list-s)
+                  c))
+    (let ((c-out (make-wire)))
+      (ripple-carry-adder (cdr list-a)
+                          (cdr list-b)
+                          (cdr list-s)
+                          c-out)
+      (full-adder (car list-a)
+                  (car list-b)
+                  c-out
+                  (car list-s)
+                  c))))
