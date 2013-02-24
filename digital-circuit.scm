@@ -87,6 +87,8 @@
 ;; (* (- n 1) full-adder-c-delay)
 ;; the delay to get the s-n is:
 ;; (+ c-n-1 full-adder-s-delay)
+
+;; hgih order bits comes first in list-a and list-b
 (define (ripple-carry-adder list-a list-b list-s c)
   (if (null? (cdr list-a))
     (let ((c-in (make-wire)))
@@ -106,3 +108,34 @@
                   c-out
                   (car list-s)
                   c))))
+
+;; low order bits comes first in list-a and list-b
+(define (ripple-carry-adder list-a list-b list-s c)
+  (let ((c-init (make-wire)))
+    (set-signal! c-init 0)
+    (let loop ((c-in c-init)
+               (cara (car list-a))
+               (carb (car list-b))
+               (cars (car list-s))
+               (cdra (cdr list-a))
+               (cdrb (cdr list-b))
+               (cdrs (cdr list-s)))
+      (if (null? cdra)
+        (full-adder cara
+                    carb
+                    c-in
+                    cars
+                    c)
+        (let ((c-out (make-wire)))
+          (full-adder cara
+                      carb
+                      c-in
+                      cars
+                      c-out)
+          (loop c-out
+                (car cdra)
+                (car cdrb)
+                (car cars)
+                (cdr cdra)
+                (cdr cdrb)
+                (cdr cdrs)))))))
