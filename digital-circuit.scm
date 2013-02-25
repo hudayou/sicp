@@ -217,7 +217,7 @@
           (loop c-out
                 (car cdra)
                 (car cdrb)
-                (car cars)
+                (car cdrs)
                 (cdr cdra)
                 (cdr cdrb)
                 (cdr cdrs)))))))
@@ -281,3 +281,6 @@
 (propagate)
 (set-signal! input-1 1)
 (propagate)
+;; if the action is not executed when it's added to wire,
+;; the it can't simulate the case when a device is first attached
+;; to wire.
