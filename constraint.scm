@@ -166,3 +166,28 @@
 ;;(set-value! F 212 'user)
 (forget-value! C 'user)
 (set-value! F 212 'user)
+(define (averager a b c)
+  (let ((x (make-connector))
+        (y (make-connector)))
+    (multiplier x c y)
+    (adder a b y)
+    (constant 2 x)
+    'ok))
+(define a (make-connector))
+(define b (make-connector))
+(define c (make-connector))
+(averager a b c)
+(probe "A" a)
+(probe "B" b)
+(probe "C" c)
+(set-value! a 1 'user)
+(set-value! b 9 'user)
+(forget-value! a 'user)
+(set-value! c 5 'user)
+;; (define (squarer a b)
+;;   (multiplier a a b))
+;; the problem with the constraint network above is that the information
+;; can flow from a to be only but not from b to a.
+;; which contradicts with the basic property of a constraint netowwork, which
+;; states that a constraint network : this nondirectionality of computation is
+;; the distinguishing feature of constraint-based systems.
