@@ -284,3 +284,18 @@
 ;; if the action is not executed when it's added to wire,
 ;; the it can't simulate the case when a device is first attached
 ;; to wire.
+
+(define a1 (make-wire))
+(define a2 (make-wire))
+(define output (make-wire))
+(probe 'a1 a1)
+(probe 'a2 a2)
+(probe 'output output)
+(and-gate a1 a2 output)
+(set-signal! a2 1)
+(set-signal! a1 1)
+(set-signal! a2 0)
+;; if the queue is first in first out, then output will first be 1 then
+;; be 0;
+;; if the queue is last in first out, then output will first be 0 then
+;; be 1.
