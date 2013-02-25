@@ -191,3 +191,33 @@
 ;; which contradicts with the basic property of a constraint netowwork, which
 ;; states that a constraint network : this nondirectionality of computation is
 ;; the distinguishing feature of constraint-based systems.
+
+(define (squarer a b)
+  (define (process-new-value)
+    (if (has-value? b)
+      (if (< (get-value b) 0)
+        (error "square less than 0 -- squarer" (get-value b))
+        (set-value! a (sqrt (get-value b)) me))
+      (if (has-value? a)
+        (set-value! b (* (get-value a) (get-value a)) me))))
+  (define (process-forget-value)
+    (forget-value! a me)
+    (forget-value! b me))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else
+            (error "unknown request -- squarer" request))))
+  (connect a me)
+  (connect b me)
+  me)
+(define self (make-connector))
+(define self-mul-self (make-connector))
+(probe "self" self)
+(probe "self-mul-self" self-mul-self)
+(squarer self self-mul-self)
+(set-value! self 3 'user)
+(forget-value! self 'user)
+(set-value! self-mul-self 16 'user)
