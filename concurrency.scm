@@ -130,3 +130,12 @@
 ;; 1000000: a b c w x y z
 ;; 
 ;; because of commutative of multiply
+;;
+;; 3.41.
+;;
+;; I don't think there is need to serilize read access to balance.
+;; Since balance is not modified during read.
+;;
+;; 3.42.
+;;
+;; I think it's safe.
