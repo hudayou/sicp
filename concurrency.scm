@@ -139,3 +139,17 @@
 ;; 3.42.
 ;;
 ;; I think it's safe.
+;;
+;; 3.43.
+;;
+;; The account could be 40 30 10 if arbitray order is allowed.
+;;
+;; 3.44.
+;;
+;; Louis is not right, since no difference needs to be computed between
+;; from-account and to-account and individual account operations is valid
+;; for both of them since they are serilized.
+;;
+;; 3.45.
+;;
+;; Wrong serializer could be used if doing Louis's way.
