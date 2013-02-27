@@ -32,3 +32,23 @@
 ;; if test-and-set! is not atomic then if when a and b access the cell
 ;; and cell is false, then they could both complete test-and-set!
 ;; and escape the the-mutex loop.
+
+(define (make-semaphore n)
+  (let ((count 0)
+        (mutex (make-mutex)))
+    (define (the-semaphore m)
+      (cond ((eq? m 'acquire)
+             (mutex 'acquire)
+             (if (< count n)
+               (begin
+                 (set! count (+ count 1))
+                 (mutex 'release))
+               (begin
+                 (mutex 'release)
+                 (the-semaphore m))))
+            ((eq? m 'release)
+             (mutex 'acquire)
+             (if (> count 0)
+               (set! count (- count 1)))
+             (mutex 'release))))
+    the-semaphore))
