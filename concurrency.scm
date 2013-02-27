@@ -95,3 +95,38 @@
 ;;
 ;; b a c
 ;; x is 121
+;;
+;; Exercise 3.40.
+;; Give all possible values of x that can result from executing
+;; (define x 10)
+;; (parallel-execute (lambda () (set! x (* x x)))
+;;                   (lambda () (set! x (* x x x))))
+;; Which of these possibilities remain if we instead use serialized procedures:
+;; (define x 10)
+;; (define s (make-serializer))
+;; (parallel-execute (s (lambda () (set! x (* x x))))
+;;                   (s (lambda () (set! x (* x x x)))))
+;;
+;; three events in p1,
+;; a. access x
+;; b. access x
+;; c. set! x
+;;
+;; (a b c)
+;;
+;; four events in p2,
+;; w. access x
+;; x. access x
+;; y. access x
+;; z. set! x
+;;
+;; (w x y z)
+;; 1000000: a b c w x y z
+;; 100: a b w x y z c
+;; 1000: a b w x y c z 
+;; 10000: a w x y z b c
+;; 100000: w a b c x y z
+;;
+;; 1000000: a b c w x y z
+;; 
+;; because of commutative of multiply
