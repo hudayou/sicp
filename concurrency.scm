@@ -69,3 +69,29 @@
 ;; Peter 1 90 or 60
 ;; 
 ;; 30, 40, 50, 55, 60, 80, 90, 110
+;;
+;; Exercise 3.39.
+;; Which of the five possibilities in the parallel execution
+;; shown above remain if we instead
+;; serialize execution as follows:
+;;
+;; (define x 10)
+;; (define s (make-serializer))
+;; (parallel-execute (lambda () (set! x ((s (lambda () (* x x))))))
+;;                   (s (lambda () (set! x (+ x 1)))))
+;;
+;; three events:
+;; a. ((s (lambda () (* x x))))
+;; b. (s (lambda () (set! x (+ x 1))))
+;; c. (set! x a)
+;;
+;; c happens after a
+;;
+;; a c b
+;; x is 101
+;;
+;; a b c
+;; x is 100
+;;
+;; b a c
+;; x is 121
