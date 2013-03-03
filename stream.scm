@@ -119,3 +119,12 @@
           ((divisible? n (stream-car ps)) false)
           (else (iter (stream-cdr ps)))))
   (iter primes))
+;; solution for 3.53
+;; produce the stream of power 2
+(define s (cons-stream 1 (add-streams s s)))
+(define (mul-streams s1 s2)
+  (stream-map * s1 s2))
+;; solution for 3.54
+(define factorials
+  (cons-stream 1 (mul-streams (integers-starting-from 2)
+                              factorials)))

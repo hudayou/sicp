@@ -69,3 +69,10 @@
                        (* x state)))
                1))
 (define double (xble 2))
+(define factorials
+  (make-stream (lambda (state)
+                 (cons (cdr state)
+                       (cons (+ (car state) 1)
+                             (* (+ (car state) 1)
+                                (cdr state)))))
+               (cons 1 1)))
