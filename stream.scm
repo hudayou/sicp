@@ -128,3 +128,8 @@
 (define factorials
   (cons-stream 1 (mul-streams (integers-starting-from 2)
                               factorials)))
+;; solution for 3.55
+(define (partial-sums stream)
+  (cons-stream (stream-car stream)
+               (stream-map (lambda (x) (+ x (stream-car stream)))
+                           (partial-sums (stream-cdr stream)))))
