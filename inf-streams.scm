@@ -144,9 +144,14 @@
                      (scale-stream integers 5))))
 
 (define (one-shot-stream bullet)
-  (make-stream (lambda (state)
-                 (list state))
-               bullet))
+  (let ((shot #f))
+    (make-stream (lambda (state)
+                   (if shot
+                     '()
+                     (begin
+                       (set! shot #t)
+                       (cons state '()))))
+                     bullet)))
 
 (define enumerate-hamming-integers
   (make-stream (lambda (state)
