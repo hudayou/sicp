@@ -163,3 +163,17 @@
 ;; (expand 1 7 10) produces 1 4 2 8 5 7 1 4 2 8 5 7
 ;; (expand 3 8 10) produces 3 7 5 0 0 0
 ;; this procedure prodcues the digits of real number (/ (* num radix) den)
+
+(define (div-streams s1 s2)
+  (stream-map / s1 s2))
+
+(define (integrate-series coeff-stream)
+  (div-streams coeff-stream integers))
+
+(define exp-series
+  (cons-stream 1 (integrate-series exp-series)))
+
+(define cosine-series
+  (cons-stream 1 (stream-map - (integrate-series sine-series))))
+(define sine-series
+  (cons-stream 0 (integrate-series cosine-series)))

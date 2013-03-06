@@ -184,3 +184,9 @@
                           (cons s1car (cons (stream-cdr s1)
                                             (stream-cdr s2))))))))))
     (cons stream1 stream2)))
+
+(define (div-streams s1 s2)
+  (stream-map / s1 s2))
+
+(define (integrate-series coeff-stream)
+  (div-streams coeff-stream integers))
