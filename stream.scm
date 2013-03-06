@@ -191,3 +191,15 @@
                               (cons-stream 0
                                            (mul-series cdrs1 cdrs2))))))
 
+(define (invert-unit-series series)
+  (cons-stream 1
+               (stream-map - (mul-series (stream-cdr series)
+                                         (invert-unit-series series)))))
+
+(define (div-series s1 s2)
+  (mul-series s1
+              (invert-unit-series s2)))
+
+(define tangent-series
+  (div-series sine-series
+              cosine-series))
