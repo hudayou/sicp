@@ -162,13 +162,18 @@
                (one-shot-stream 1)))
 
 (define (merge-stream stream1 stream2)
-  (cond ((stream-null? stream1) stream2)
-        ((stream-null? stream2) stream1)
-        (else
-          (make-stream
-            (lambda (state)
-              (let ((s1 (car state))
-                    (s2 (cdr state)))
+  (make-stream
+    (lambda (state)
+      (let ((s1 (car state))
+            (s2 (cdr state)))
+        (cond ((and (stream-null? s1)
+                    (stream-null? s2))
+               (cons '() '()))
+              ((stream-null? s1) (cons (stream-car s2)
+                                       (cons s1 (stream-cdr s2))))
+              ((stream-null? s2) (cons (stream-car s1)
+                                       (cons (stream-cdr s1) s2)))
+              (else
                 (let ((s1car (stream-car s1))
                       (s2car (stream-car s2)))
                   (cond ((< s1car s2car)
@@ -177,5 +182,5 @@
                          (cons s2car (cons s1 (stream-cdr s2))))
                         (else
                           (cons s1car (cons (stream-cdr s1)
-                                            (stream-cdr s2))))))))
-            (cons stream1 stream2)))))
+                                            (stream-cdr s2))))))))))
+    (cons stream1 stream2)))
