@@ -177,3 +177,17 @@
   (cons-stream 1 (stream-map - (integrate-series sine-series))))
 (define sine-series
   (cons-stream 0 (integrate-series cosine-series)))
+
+(define (mul-series s1 s2)
+  (let ((cars1 (stream-car s1))
+        (cars2 (stream-car s2))
+        (cdrs1 (stream-cdr s1))
+        (cdrs2 (stream-cdr s2)))
+    (cons-stream (* cars1 cars2)
+                 (add-streams (stream-map (lambda (c) (* cars1 c))
+                                          cdrs2)
+                              (stream-map (lambda (c) (* cars2 c))
+                                          cdrs1)
+                              (cons-stream 0
+                                           (mul-series cdrs1 cdrs2))))))
+
