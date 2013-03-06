@@ -203,3 +203,23 @@
 (define tangent-series
   (div-series sine-series
               cosine-series))
+
+(define (sqrt x tolerance)
+  (stream-limit (sqrt-stream x) tolerance))
+
+(define (stream-limit stream tolerance)
+  (if (< (abs (- (stream-car stream)
+                 (stream-car (stream-cdr stream))))
+         tolerance
+         (stream-car (stream-cdr stream)))
+    (stream-limit (stream-cdr stream) tolerance)))
+
+;; lot for log of two
+(define (lot-summands n)
+  (cons-stream (/ 1.0 n)
+               (stream-map - (lot-summands (+ n 1)))))
+
+(define lot-stream
+  (partial-sums (pi-summands 1)))
+
+(display-stream lot-stream)
