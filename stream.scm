@@ -223,3 +223,12 @@
   (partial-sums (pi-summands 1)))
 
 (display-stream lot-stream)
+
+;; solution for 3.66
+;; paris are placed into the stream ordered by column first, then by
+;; row.
+;; there are 4950 pairs precede the pair (1,100)
+;; there are 5048 pairs precede the pair (99,100)
+;; there are 5049 pairs precede the pair (100,100)
+;;
+;; there are C*(C-1)/2+R-1 pairs precede the pair (R,C)
