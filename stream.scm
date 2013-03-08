@@ -232,3 +232,27 @@
 ;; there are 5049 pairs precede the pair (100,100)
 ;;
 ;; there are C*(C-1)/2+R-1 pairs precede the pair (R,C)
+
+(define (interleave s1 s2)
+  (if (stream-null? s1)
+    s2
+    (cons-stream (stream-car s1)
+                 (interleave s2 (stream-cdr s1)))))
+
+(define (pairs s t)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (interleave
+      (stream-map (lambda (x) (list (stream-car s) x))
+                  (stream-cdr t))
+      (pairs (stream-cdr s) (stream-cdr t)))))
+
+;; solution for 3.67
+
+(define (big-first-pairs s)
+  (interleave (stream-map (lambda (x) (list x (stream-car s)))
+                          (integers-starting-from (+ (stream-car s) 1)))
+              (big-first-pairs (stream-cdr s))))
+
+(define all-integers-pairs (interleave (pairs integers integers)
+                                       (big-first-pairs integers)))
