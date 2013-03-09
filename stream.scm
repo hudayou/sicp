@@ -1,5 +1,6 @@
 (define true #t)
 (define false #f)
+(define (square x) (* x x))
 (define the-empty-stream '())
 (define stream-null? null?)
 (define (stream-ref s n)
@@ -260,3 +261,34 @@
   (interleave (pairs integers integers)
               (big-first-pairs (integers-starting-from 2)
                                integers)))
+
+(define pythagorean-triples (stream-filter (lambda (x)
+                                             (= (square (caddr x))
+                                                (+ (square (cadr x))
+                                                   (square (car x)))))
+                                           (triples integers
+                                                    integers
+                                                    integers)))
+
+(define (triples s t u)
+  (stream-map (lambda (x)
+                (list (car x)
+                      (cadr x)
+                      (cadddr x)))
+              (stream-filter
+                (lambda (x)
+                  (= (cadr x)
+                     (caddr x)))
+                (stream-map
+                  (lambda (x y)
+                    (append x y))
+                  (pairs s t)
+                  (pairs t u)))))
+
+(define (triples s t u)
+  (cons-stream
+    (list (stream-car s) (stream-car t) (stream-car u))
+    (interleave
+      (stream-map (lambda (x) (cons (stream-car s) x))
+                  (pairs t (stream-cdr u)))
+      (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
