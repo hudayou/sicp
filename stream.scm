@@ -249,10 +249,14 @@
 
 ;; solution for 3.67
 
-(define (big-first-pairs s)
-  (interleave (stream-map (lambda (x) (list x (stream-car s)))
-                          (integers-starting-from (+ (stream-car s) 1)))
-              (big-first-pairs (stream-cdr s))))
+(define (big-first-pairs s t)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (interleave (stream-map (lambda (x) (list x (stream-car t)))
+                            (stream-cdr s))
+                (big-first-pairs (stream-cdr s) (stream-cdr t)))))
 
-(define all-integers-pairs (interleave (pairs integers integers)
-                                       (big-first-pairs integers)))
+(define all-integers-pairs
+  (interleave (pairs integers integers)
+              (big-first-pairs (integers-starting-from 2)
+                               integers)))
