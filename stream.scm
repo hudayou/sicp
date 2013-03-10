@@ -292,3 +292,50 @@
       (stream-map (lambda (x) (cons (stream-car s) x))
                   (pairs t (stream-cdr u)))
       (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
+
+(define (weighted-pairs s t weight)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (merge-weighted
+      (stream-map (lambda (x) (list (stream-car s) x))
+                  (stream-cdr t))
+      (weighted-pairs (stream-cdr s) (stream-cdr t))
+      weight)))
+
+(define (merge-weighted s1 s2 weight)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+          (let ((weight-of-s1car (weight (stream-car s1)))
+                (weight-of-s2car (weight (stream-car s2))))
+            (cond ((< weight-of-s1car weight-of-s2car)
+                   (cons-stream s1car (merge (stream-cdr s1) s2)))
+                  ((> weight-of-s1car weight-of-s2car)
+                   (cons-stream s2car (merge s1 (stream-cdr s2))))
+                  (else
+                    (cons-stream s1car
+                                 (cons-stream s2car
+                                              (merge (stream-cdr s1)
+                                                     (stream-cdr s2))))))))))
+
+(define sum-weighted-pairs (weighted-pairs integers integers
+                                           (lambda (p)
+                                             (+ (car p)
+                                                (cadr p)))))
+
+(define no-two-three-five-factor-integers
+  (stream-filter (lambda (i)
+                   (and (not (divisible? i 2)
+                             (divisible? i 3)
+                             (divisible? i 5))))
+                 integers))
+
+(define two-three-five-sum-weighted-pairs
+  (weighted-pairs no-two-three-five-factor-integers
+                  no-two-three-five-factor-integers
+                  (lambda (p)
+                    (let ((i (car p))
+                          (j (cdr p)))
+                      (+ (* 2 i)
+                         (* 3 j)
+                         (* 5 i j))))))
