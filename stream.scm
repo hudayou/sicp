@@ -339,3 +339,51 @@
                       (+ (* 2 i)
                          (* 3 j)
                          (* 5 i j))))))
+
+(define (cube x)
+  (* x x x))
+
+(define (cube-sum-weight pair)
+  (let ((i (car p))
+        (j (cdr p)))
+    (+ (cube i)
+       (cube j))))
+
+(define (ramanujan-numbers)
+  (define cube-sum-weighted-pairs (weighted-pairs integers
+                                                  integers
+                                                  cube-sum-weight))
+  (define (ramanujan-stream s t)
+    (let ((csw-of-s (cube-sum-weight (stream-car s)))
+          (csw-of-t (cube-sum-weight (stream-car t))))
+      (if (= csw-of-s csw-of-t)
+        (cons-stream csw-of-s (ramanujan-stream (stream-cdr s)
+                                                (stream-cdr t)))
+        (ramanujan-stream (stream-cdr s)
+                          (stream-cdr t)))))
+  (ramanujan-stream cube-sum-weighted-pairs
+                    (stream-cdr cube-sum-weighted-pairs)))
+
+(define (square-sum-weight pair)
+  (let ((i (car p))
+        (j (cdr p)))
+    (+ (square i)
+       (square j))))
+
+(define (square-sum-numbers)
+  (define square-sum-weighted-pairs (weighted-pairs integers
+                                                  integers
+                                                  square-sum-weight))
+  (define (square-sum-stream s t)
+    (let ((ssw-of-s (square-sum-weight (stream-car s)))
+          (ssw-of-t (square-sum-weight (stream-car t))))
+      (if (= ssw-of-s ssw-of-t)
+        (cons-stream ssw-of-s (square-sum-stream (stream-cdr s)
+                                                (stream-cdr t)))
+        (square-sum-stream (stream-cdr s)
+                          (stream-cdr t)))))
+  (square-sum-stream square-sum-weighted-pairs
+                    (stream-cdr square-sum-weighted-pairs)))
+
+;; the two procedures square-sum-numbers and ramanujan-numbers
+;; could be one procedure take a weight procedure argument
