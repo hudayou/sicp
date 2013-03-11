@@ -387,3 +387,19 @@
 
 ;; the two procedures square-sum-numbers and ramanujan-numbers
 ;; could be one procedure take a weight procedure argument
+
+(define (integral integrand initial-value dt)
+  (define int
+    (cons-stream initial-value
+                 (add-streams (scale-stream integrand dt)
+                              int)))
+  int)
+
+(define (RC r c dt)
+  (lambda (i v0)
+    (add-stream (scale-stream i r)
+                (integral (scale-stream i (/ 1 c))
+                          v0
+                          dt))))
+
+(define RC1 (RC 5 1 0.5))
