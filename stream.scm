@@ -427,3 +427,14 @@
     (cons-stream (sign-change-detector avpt last-value)
                  (make-zero-crossings (stream-cdr input-stream)
                                       (stream-car input-stream) avpt))))
+
+(define (make-zero-crossings-with-smoothed-input input-stream last-value)
+  (let ((smoothed-input-stream (smooth input-stream)))
+    (make-zero-crossing smoothed-input-stream
+                        0)))
+
+(define (smooth stream)
+  (stream-map (lambda (x y)
+                (/ (+ x y) 2))
+              stream
+              (stream-cdr stream)))
