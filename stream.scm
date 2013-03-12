@@ -476,3 +476,48 @@
     (cons vc il)))
 
 (define RLC1 ((RLC 1 1 0.2 0.1) 10 1))
+
+(define random-numbers
+  (cons-stream random-init
+               (stream-map rand-update random-numbers)))
+
+(define cesaro-stream
+  (map-successive-pairs (lambda (r1 r2) (= (gcd r1 r2) 1))
+                        random-numbers))
+(define (map-successive-pairs f s)
+  (cons-stream
+    (f (stream-car s) (stream-car (stream-cdr s)))
+    (map-successive-pairs f (stream-cdr (stream-cdr s)))))
+
+(define (monte-carlo experiment-stream passed failed)
+  (define (next passed failed)
+    (cons-stream
+      (/ passed (+ passed failed))
+      (monte-carlo
+        (stream-cdr experiment-stream) passed failed)))
+  (if (stream-car experiment-stream)
+    (next (+ passed 1) failed)
+    (next passed (+ failed 1))))
+(define pi
+  (stream-map (lambda (p) (sqrt (/ 6 p)))
+              (monte-carlo cesaro-stream 0 0))
+
+(define (rand-on-demond request-stream)
+  (define (rand init)
+    (define random-numbers
+      (cons-stream init
+                   (stream-map rand-update random-numbers)))
+    random-numbers)
+  (define (rod request-stream random-stream)
+    (let ((first-request (stream-car request-stream))
+          (rest-request (stream-cdr request-stream)))
+      (cond ((eq? (car first-request) 'generate)
+             (cons-stream (stream-car random-stream)
+                          (rod rest-request
+                               (stream-cdr random-stream))))
+            ((eq? (car first-request) 'reset)
+             (let ((new-stream (rand (cdr first-request))))
+               (cons-stream (stream-car new-stream)
+                            (rod rest-request
+                                 (stream-cdr new-stream))))))))
+  (rod request-stream (rand 0)))
