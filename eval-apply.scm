@@ -61,7 +61,7 @@
   'ok)
 
 ;; solution for 4.1
-;; given the fact first-operand is the most left operand
+;; given the fact first-operand is the leftmost operand
 ;; eval operands from left to right
 (define (list-of-values exps env)
   (if (no-operands? exps)
