@@ -12,6 +12,10 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
+        ((and? exp)
+         (eval-and exp env))
+        ((or? exp)
+         (eval-or exp env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -176,3 +180,39 @@
 ;;    (define (no-operands? ops) (null? ops))
 ;;    (define (first-operand ops) (car ops))
 ;;    (define (rest-operands ops) (cdr ops))
+
+(define (predicates exp)
+  (cdr exp))
+
+(define (no-predicate? preds)
+  (null? preds))
+
+(define (last-predicate? preds)
+  (null? (cdr preds)))
+
+(define (first-predicate preds)
+  (car preds))
+
+(define (rest-predicates preds)
+  (cdr preds))
+
+(define (eval-and-predicates preds env)
+  (cond ((no-predicates? preds) 'true)
+        ((last-predicate? preds) (eval (first-predicate preds)))
+        ((true? (eval (first-predicate preds) env))
+         (eval-and-predicates (rest-predicates preds) env))
+        (else
+          'false)))
+
+(define (eval-and exp env)
+  (eval-and-predicates (predicates exp) env))
+
+(define (eval-or-predicates preds env)
+  (cond ((no-predicates? preds) 'false)
+        ((false? (eval (first-predicate preds) env))
+         (eval-or-predicates (rest-predicates preds) env))
+        (else
+          (eval (first-predicate preds) env))))
+
+(define (eval-or exp env)
+  (eval-or-predicates (predicates exp) env))
