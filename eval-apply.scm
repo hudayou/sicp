@@ -216,3 +216,23 @@
 
 (define (eval-or exp env)
   (eval-or-predicates (predicates exp) env))
+
+(define (and->if exp)
+  (expand-and-predicates (predicates exp)))
+
+(define (expand-and-predicates preds)
+  (if (null? preds)
+    'true
+    (make-if (first-predicate preds)
+             (expand-and-predicates (rest-predicates preds))
+             'false)))
+
+(define (or->if exp)
+  (expand-or-predicates (predicates exp)))
+
+(define (expand-or-predicates preds)
+  (if (null? preds)
+    'false
+    (make-if (first-predicate preds)
+             'true
+             (expand-or-predicates (rest-predicates preds)))))
