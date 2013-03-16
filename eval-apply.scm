@@ -153,6 +153,14 @@
 (define (cond-clauses exp) (cdr exp))
 (define (cond-else-clause? clause)
   (eq? (cond-predicate clause) 'else))
+(define (cond-test-recipient-clause? clause)
+  (eq? (first-action (cond-actions clause)) '=>))
+(define (first-action actions)
+  (car actions))
+(define (rest-actions actions)
+  (cdr actions))
+(define (cond-recipient test-recipient-clause)
+  (rest-actions (cond-actions test-recipient-clause)))
 (define (cond-predicate clause) (car clause))
 (define (cond-actions clause) (cdr clause))
 (define (cond->if exp)
@@ -168,9 +176,17 @@
           (sequence->exp (cond-actions first))
           (error "else clause isn't last -- cond->if"
                  clauses))
-        (make-if (cond-predicate first)
-                 (sequence->exp (cond-actions first))
-                 (expand-clauses rest))))))
+        (if (cond-test-recipient-clause? first)
+          (make-if (cond-predicate first)
+                   (test-recipient->exp (cond-predicate first)
+                                        (cond-recipient first))
+                   (expand-clauses rest))
+          (make-if (cond-predicate first)
+                   (sequence->exp (cond-actions first))
+                   (expand-clauses rest)))))))
+
+(define (test-recipient->exp test recipient)
+  (list recipient test))
 
 ;; solution for 4.2
 ;; a. special forms should take precedence over odinary procedures
