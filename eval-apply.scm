@@ -11,6 +11,8 @@
                          env))
         ((let? exp)
          (eval (let->combination exp) env))
+        ((let*? exp)
+         (eval (let*->nested-lets exp) env))
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
@@ -261,7 +263,37 @@
 (define (let-vars exp) (map car (let-bindings exp)))
 (define (let-inits exp) (map cadr (let-bindings exp)))
 
+(define (make-let binding body)
+  (list 'let (list binding) body))
+
 (define (let->combination exp)
     (cons (make-lambda (let-vars exp)
                        (let-body exp))
           (let-inits exp)))
+
+;; transform let* to nested lets
+;;
+;; (let* ((x 3)
+;;        (y (+ x 2))
+;;        (z (+ x y 5)))
+;;   (* x z))
+;;
+;; (let ((x 3))
+;;   (let ((y (+ x 2)))
+;;     (let ((z (+ x y 5)))
+;;       (* x z))))
+
+(define (let*? exp) (tagged-list? exp 'let*))
+
+(define (let*->nested-lets exp)
+  (define (last-binding? bindings) (null? (cdr bindings)))
+  (define (first-binding bindings) (car bindings))
+  (define (rest-bindings bindings) (cdr bindings))
+  (define (iter-bindings bindings body)
+    (if (last-binding? bindings)
+      (cons 'let (cons (list (first-binding bindings))
+                       body))
+      (make-let (first-binding bindings)
+                (iter-bindings (rest-bindings bindings) body))))
+  (iter-bindings (let-bindings exp)
+                 (let-body exp)))
