@@ -9,6 +9,8 @@
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
                          env))
+        ((let? exp)
+         (eval (let->combination exp) env))
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
@@ -252,3 +254,14 @@
     (make-if (first-predicate preds)
              'true
              (expand-or-predicates (rest-predicates preds)))))
+
+(define (let? exp) (tagged-list? exp 'let))
+(define (let-bindings exp) (cadr exp))
+(define (let-body exp) (cddr exp))
+(define (let-vars exp) (map car (let-bindings exp)))
+(define (let-inits exp) (map cadr (let-bindings exp)))
+
+(define (let->combination exp)
+    (cons (make-lambda (let-vars exp)
+                       (let-body exp))
+          (let-inits exp)))
