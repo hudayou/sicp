@@ -117,6 +117,8 @@
     (caddr exp)
     (make-lambda (cdadr exp)    ; formal parameters
                  (cddr exp))))  ; body
+(define (make-definition name formal-parameters body)
+  (cons 'define (cons (cons name formal-parameters) body)))
 
 (define (lambda? exp) (tagged-list? exp 'lambda))
 (define (lambda-parameters exp) (cadr exp))
@@ -267,9 +269,65 @@
   (list 'let (list binding) body))
 
 (define (let->combination exp)
+  (if (named-let? exp)
+    (named-let->combination exp)
     (cons (make-lambda (let-vars exp)
                        (let-body exp))
-          (let-inits exp)))
+          (let-inits exp))))
+
+;; transform named let to letrec, let or internal definition
+;;
+;; (define (fib n)
+;;   (let fib-iter ((a 1)
+;;                  (b 0)
+;;                  (count n))
+;;     (if (= count 0)
+;;       b
+;;       (fib-iter (+ a b) a (- count 1)))))
+;;
+;; (define (fib n)
+;;   (letrec ((fib-iter (lambda (a b count)
+;;                        (if (= count 0)
+;;                          b
+;;                          (fib-iter (+ a b) a (- count 1))))))
+;;     (fib-iter 1 0 n)))
+;;
+;; ;; http://en.wikipedia.org/wiki/Lambda_calculus#Recursion_and_fixed_points
+;; (define (fib n)
+;;   (let ((fib-iter (lambda (fib-iter a b count)
+;;                     (if (= count 0)
+;;                       b
+;;                       (fib-iter fib-iter (+ a b) a (- count 1))))))
+;;     (fib-iter fib-iter 1 0 n)))
+;;
+;; (define (fib n)
+;;   (let ((fib-iter (lambda ()
+;;                     (define (fib-iter a b count)
+;;                       (if (= count 0)
+;;                         b
+;;                         (fib-iter (+ a b) a (- count 1))))
+;;                     (fib-iter 1 0 n))))
+;;     (fib-iter)))
+
+(define (named-let? exp) (symbol? (cadr exp)))
+(define (named-let-name exp) (cadr exp))
+(define (named-let-bindings exp) (caddr exp))
+(define (named-let-body exp) (cdddr exp))
+(define (named-let-vars exp) (map car (named-let-bindings exp)))
+(define (named-let-inits exp) (map cadr (named-let-bindings exp)))
+
+(define (named-let->combination exp)
+  (define (make-body definition body)
+    (list definition body))
+  (let ((name (named-let-name exp))
+        (vars (named-let-vars exp))
+        (inits (named-let-inits exp))
+        (body (named-let-body exp)))
+    (make-let (list name (make-lambda '()
+                                      (make-body
+                                        (make-definition name vars body)
+                                        (cons name inits))))
+              (list name))))
 
 ;; transform let* to nested lets
 ;;
