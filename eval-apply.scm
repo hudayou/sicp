@@ -329,6 +329,9 @@
                                         (cons name inits))))
               (list name))))
 
+(define (make-named-let name bindings body)
+  (list 'let name bindings body))
+
 ;; transform let* to nested lets
 ;;
 ;; (let* ((x 3)
@@ -355,3 +358,64 @@
                 (iter-bindings (rest-bindings bindings) body))))
   (iter-bindings (let-bindings exp)
                  (let-body exp)))
+
+;; do body if predicates are not true
+;; (do bindings predicates body)
+;;
+;; (do ((var init [step]) ...) (test [expr ...]) body)
+
+;; transform do to named-let
+;;
+;; (do ((i 1 (1+ i)))
+;;   ((> i 4))
+;;   (display i))
+;;
+;; (do ((i 1 (1+ i))
+;;      (p 3 (* 3 p)))
+;;     ((> i 4)
+;;      p)
+;;   (format #t "3**~s is ~s\n" i p))
+;;
+;; (let do ((i 1)
+;;          (p 3))
+;;   (if (> i 4)
+;;     (begin
+;;       p)
+;;     (begin
+;;       (format #t "3**~s is ~s\n" i p)
+;;       (do (1+ i) (* 3 p)))))
+;;
+;; (define d1 '(do ((i 1 (1+ i)) (p 3 (* 3 p))) ((> i 4) p) (format #t "3**~s
+;; is ~s\n" i p)))
+;;
+;; (define d2 '(do ((i 1 (1+ i))) ((> i 4)) (display i)))
+
+(define (do? exp) (tagged-list? exp 'do))
+(define (do-bindings exp) (map (lambda (x) (list-head x 2))
+                               (cadr exp)))
+(define (do-test exp) (caaddr exp))
+(define (do-test-exps exp) (cdaddr exp))
+(define (no-exps-after-test? exp) (null? (cdaddr exp)))
+(define (do-body exp) (cdddr exp))
+(define (do-steps exp) (map (lambda (x) (if (null? (list-tail x 2))
+                                          (car x)
+                                          (caddr x)))
+                            (cadr exp)))
+
+(define (do->named-let exp)
+  (make-named-let
+    'do
+    (do-bindings exp)
+    (if (no-exps-after-test? exp)
+      (make-if (do-test exp)
+               'true ;; fixme, how to return unspecified value?
+               (sequence->exp (append (do-body exp)
+                                      (list
+                                        (cons 'do
+                                              (do-steps exp))))))
+      (make-if (do-test exp)
+               (sequence->exp (do-test-exps exp))
+               (sequence->exp (append (do-body exp)
+                                      (list
+                                        (cons 'do
+                                              (do-steps exp)))))))))
