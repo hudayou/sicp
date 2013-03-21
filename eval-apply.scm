@@ -502,3 +502,29 @@
 (define (frame-values frame) (map cdr frame))
 (define (add-binding-to-frame! var val frame)
   (set-car! frame (cons var val)))
+
+(define (env-loop env loop set error-msg var)
+  (if (eq? env the-empty-environment)
+    (error error-msg var)
+    (let ((frame (first-frame env)))
+      (define (scan vars vals)
+        (cond ((null? vars)
+               (if loop
+                 (env-loop (enclosing-environment env))
+                 (add-binding-to-frame! var val frame)))
+              ((eq? var (car vars))
+               (if set
+                 (set-car! vals val)
+                 (car vals)))
+              (else (scan (cdr vars) (cdr vals)))))
+      (scan (frame-variables frame)
+            (frame-values frame)))))
+
+(define (lookup-variable-value var env)
+  (env-loop env true false "unbound variable" var))
+
+(define (set-variable-value! var val env)
+  (env-loop env true true "unbound variable -- set!" var))
+
+(define (define-variable! var val env)
+  (env-loop env true true "empty environment" var))
