@@ -444,6 +444,20 @@
 (define (add-binding-to-frame! var val frame)
   (set-car! frame (cons var (car frame)))
   (set-cdr! frame (cons val (cdr frame))))
+(define (remove-binding-from-frame! var frame)
+  (define (remove-binding! prev-vars vars prev-vals vals)
+    (if (null? vars)
+      'done
+      (if (eq? var (car vars))
+        (set-cdr! pre-vars (cdr vars))
+        (remove-binding! vars (cdr vars) vals (cdr vals)))))
+  (let ((vars (frame-variables frame))
+        (vals (frame-values frame)))
+    (if (eq? var (car vars))
+      (begin
+        (set-car! frame (cdr vars))
+        (set-cdr! frame (cdr vals)))
+      (remove-binding! vars (cdr vars) vals (cdr vals)))))
 
 (define (extend-environment vars vals base-env)
   (if (= (length vars) (length vals))
@@ -528,3 +542,17 @@
 
 (define (define-variable! var val env)
   (env-loop env true true "empty environment" var))
+
+(define (make-unbound! var env)
+  (define (env-loop env)
+    (let ((frame (first-frame env)))
+      (define (scan vars vals)
+        (cond ((null? vars)
+               (env-loop (enclosing-environment env)))
+              ((eq? var (car vars))
+               (remove-binding-from-frame! var frame)
+               (env-loop (enclosing-environment env)))
+              (else (scan (cdr vars) (cdr vals)))))
+      (scan (frame-variables frame)
+            (frame-values frame))))
+  (env-loop env))
