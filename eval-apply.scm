@@ -569,6 +569,11 @@
         (list 'cdr cdr)
         (list 'cons cons)
         (list 'null? null?)
+        (list 'null? null?)
+        (list '+ +)
+        (list '- -)
+        (list '* *)
+        (list '/ /)
         ;;<more primitives>
         ))
 (define (primitive-procedure-names)
@@ -620,3 +625,29 @@
                    '<procedure-env>))
     (display object))
   (newline))
+
+;; guile> (define the-global-environment (setup-environment))
+;; guile> (driver-loop)
+;; ;;; m-eval input:
+;; (map car '((1 1) (2 2) (3 3) (4 4)))
+;;
+;; Backtrace:
+;; In current input:
+;;    2: 0* [driver-loop]
+;; In eval-apply.scm:
+;;  609: 1* (let* ((input #)) (let* (#) (announce-output output-prompt) ...))
+;;  610: 2  (let* ((output #)) (announce-output output-prompt) (user-print output))
+;;  610: 3* [eval (map car (quote (# # # ...))) (((false true car ...) #f #t ...))]
+;;    6: 4  (cond (# exp) (# #) (# #) ...)
+;; In unknown file:
+;;    ...
+;;    ?: 5  [map]
+;;    ?: 6* [map {(primitive #<primitive-procedure car>)} ((1 1) (2 2) (3 3) (4 4))]
+;;
+;; ERROR: In procedure map:
+;; ERROR: Wrong type argument in position 1: (primitive #<primitive-procedure car>)
+;; ABORT: (wrong-type-arg)
+
+;; procedures have different representations in evaluator and metacircular
+;; evaluator, a primitive map in the evalutor does not recogonize the
+;; representation in metacircular evaluator.
