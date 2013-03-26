@@ -654,3 +654,27 @@
 ;; procedures have different representations in evaluator and metacircular
 ;; evaluator, a primitive map in the evalutor does not recogonize the
 ;; representation in metacircular evaluator.
+
+(define (scan-out-defines body)
+  (define (transform body let-bindings let-body let-indicator)
+    (let ((carb (car body))
+          (cdrb (cdr body)))
+      (if (definition? carb)
+        (transform
+          carb
+          (cons (list
+                  (definition-variable carb)
+                  '*unassigned*)
+                let-bindings)
+          (cons (list
+                  'set!
+                  (definition-variable carb)
+                  (definition-value carb))
+                let-body)
+          true)
+        (if let-indicator
+          (list 'let
+                (reverse let-bindings)
+                (append (reverse let-body) body))
+          body))))
+  (transform body '() '() false))
