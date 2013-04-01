@@ -678,3 +678,12 @@
                 (append (reverse let-body) body))
           body))))
   (transform body '() '() false))
+
+;; solution for 4.17
+;; an extra frame is needed because of the extra let expression introduced.
+
+;; solution for 4.18
+;; This procedure will not work if internal definitions are scanned out as
+;; shown in this exercise, since when we are evaulating e2 in the second let,
+;; u is '*unassigned instead of e1.
+;; It will work if they are scanned out as shown in the text.
