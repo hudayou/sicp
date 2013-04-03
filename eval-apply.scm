@@ -687,3 +687,8 @@
 ;; shown in this exercise, since when we are evaulating e2 in the second let,
 ;; u is '*unassigned instead of e1.
 ;; It will work if they are scanned out as shown in the text.
+
+;; solution for 4.19
+;; according to note 26, as a lazy mind, I choose to support Alyssa.
+;; but since emacs supports Eva's view, a possible implementation could be
+;; topological sort the definitions so b get a's value.
