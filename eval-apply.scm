@@ -17,6 +17,8 @@
          (eval (let->combination exp) env))
         ((let*? exp)
          (eval (let*->nested-lets exp) env))
+        ((letrec? exp)
+         (eval (letrec->let exp) env))
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
@@ -692,3 +694,16 @@
 ;; according to note 26, as a lazy mind, I choose to support Alyssa.
 ;; but since emacs supports Eva's view, a possible implementation could be
 ;; topological sort the definitions so b get a's value.
+
+(define (letrec? exp) (tagged-list? exp 'letrec))
+
+(define (letrec-bindings exp) (cadr exp))
+(define (letrec-body exp) (cddr exp))
+(define (letrec-vars exp) (map car (letrec-bindings exp)))
+(define (letrec-inits exp) (map cadr (letrec-bindings exp)))
+
+(define (letrec->let exp)
+  (list 'let
+        (map (lambda (v) (list v '*unassigned*)) (letrec-vars exp))
+        (append (map (lambda (b) (cons 'set! b)) (letrec-bindings exp))
+                letrec-body)))
