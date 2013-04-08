@@ -707,3 +707,46 @@
         (map (lambda (v) (list v '*unassigned*)) (letrec-vars exp))
         (append (map (lambda (b) (cons 'set! b)) (letrec-bindings exp))
                 letrec-body)))
+
+;; solution for 4.21 a
+;; ((lambda (n)
+;;    ((lambda (fact)
+;;       (fact fact n))
+;;     (lambda (ft k)
+;;       (if (= k 1)
+;;         1
+;;         (* k (ft ft (- k 1)))))))
+;;  10)
+;;
+;; ((lambda (n)
+;;    ((lambda (fib-iter)
+;;       (fib-iter fib-iter 1 0 n))
+;;     (lambda (fib a b count)
+;;       (if (= count 0)
+;;         b
+;;         (fib fib (+ a b) a (- count 1))))))
+;;  10)
+
+;; solution for 4.21 b
+;; (define (f x)
+;;   (define (even? n)
+;;     (if (= n 0)
+;;       true
+;;       (odd? (- n 1))))
+;;   (define (odd? n)
+;;     (if (= n 0)
+;;       false
+;;       (even? (- n 1))))
+;;   (even? x))
+;;
+;; (define (f x)
+;;   ;; even? is a procedure takes ev? od? n as parameters and return whether
+;;   ;; n is even or not.
+;;   ;; od? is a procedure takes ev? od? n as parameters and return whether
+;;   ;; n is odd or not.
+;;   ((lambda (even? odd?)
+;;      (even? even? odd? x))
+;;    (lambda (ev? od? n)
+;;      (if (= n 0) true (od? ev? od? (- n 1))))
+;;    (lambda (ev? od? n)
+;;      (if (= n 0) false (ev? ev? od? (- n 1))))))
